@@ -11,6 +11,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <signal.h>
+#include "libft.h"
 #include "server.h"
 #include "websocket.h"
 
@@ -114,7 +115,7 @@ void				pipe_com_write(int fd, const char *msg)
 	if (msg && fd > 0)
 	{
 		strncpy((char*)buf, (const char*)msg, BUFSIZE);
-		fprintf(stdout, "buf = [%s]\n", buf);//_DEBUG_//
+// 		fprintf(stdout, "buf = [%s]\n", buf);//_DEBUG_//
 		if (write(fd, buf, BUFSIZE) != BUFSIZE)
 		{
 			perror("write");
@@ -129,7 +130,7 @@ unsigned char		*pipe_com_read(int fd)
 
 	if (!(buf = (unsigned char*)malloc(sizeof(unsigned char) * BUFSIZE)))
 	{
-		fprintf(stdout, "Error : malloc");
+		fprintf(stderr, "Error : malloc");
 		perror("malloc");
 		exit(EXIT_FAILURE);
 	}
@@ -139,7 +140,7 @@ unsigned char		*pipe_com_read(int fd)
 		perror("read");
  		exit(EXIT_FAILURE);
 	}
-	fprintf(stdout, "buf = [%s]\n", buf);//_DEBUG_//
+// 	fprintf(stdout, "buf = [%s]\n", buf);//_DEBUG_//
 	return (buf);
 }
 
@@ -263,6 +264,7 @@ void				init_comtab(t_com *tab, int s)
 // 		fprintf(stdout, "signal close\n");
 // 	}
 // }
+ 
 int					choose_sock_idx(t_env e, int idx)
 {
 	int		i;
@@ -407,23 +409,23 @@ int					connection_handler(int sock)
 		//father pipe com event handler
  		for (i = 0; i < 4; i++)
  		{
-			fprintf(stdout, "[%d]\n", i);
+// 			fprintf(stdout, "[%d]\n", i);
 			if (env.com_tab[i].sock == -1)
 				break ;
  			buftmp = pipe_com_read(env.ctop_pipe[i][0]);
-			fprintf(stdout, "je suis con\n");
-			(void)tab;
+// 			fprintf(stdout, "je suis con\n");
 			//parse message
 			if (buftmp)
 			{
-				tab = str_split((char*)buftmp, ':');
+// 				fprintf(stdout, "buftmp = [%s]\n", buftmp);
+				tab = ft_strsplit((char*)buftmp, ':');
 				if (tab)
 				{
-					show_tab(tab);
+// 					show_tab(tab);
 					if (tab[0] && !strcmp((const char*)tab[0], "con"))
 					{
 						env.com_tab[i].sock = -1;
-						fprintf(stdout, "Message get [%d]\n", i);
+// 						fprintf(stdout, "Message get [%d]\n", i);
 					}
 					free(tab);
 				}

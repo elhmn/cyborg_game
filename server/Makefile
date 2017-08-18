@@ -14,11 +14,13 @@ OBJS = $(addprefix $(OBJDIR), $(OBJ))
 
 INCS = -I ./incs
 
+LIBFT = -L ./libft/
+
 WSLAY_LIB_DIR = -L .libs/wslay/lib/.libs/
 
 WSLAY_INC_DIR = -I .libs/wslay/lib/includes/
 
-LIBS = -lnettle -lwslay
+LIBS = -lnettle -lwslay -lft
 
 CC = gcc
 
@@ -27,17 +29,20 @@ TAGS = -Wall -Werror -Wextra
 all: $(NAME)
 
 $(NAME) : $(OBJS)
-	$(CC) $(TAGS) -g -o $(NAME) $(WSLAY_LIB_DIR) $(LIBS) $(OBJS)
+	$(CC) $(TAGS) $(WSLAY_LIB_DIR) $(LIBFT) -g -o $(NAME) $(OBJS) $(LIBS)
 
 $(OBJS) : $(SRCS)
-	$(CC) $(TAGS) -g -c $(INCS) $(WSLAY_INC_DIR) $(SRCS)
-	mv $(OBJ) $(OBJDIR)
+	make -C ./libft
+	$(CC) $(TAGS) -g -c $(INCS) $(WSLAY_INC_DIR) $(SRCS) && mv $(OBJ) $(OBJDIR)
 
 clean:
+	make clean -C ./libft
 	rm -rf $(OBJ)
 	rm -rf $(OBJS)
+	rm -f ./*.o
 
 fclean: clean
+	make fclean -C ./libft
 	rm -rf $(NAME)
 
 re: fclean all
