@@ -32,12 +32,18 @@ typedef struct		s_env
 	t_com			com_tab[MAXPLAYER];
 
 	//parent to child pipe
-	int				ptoc_pipe[2];
+	int				ptoc_pipe[MAXPLAYER][2];
 
 	//child to parent pipe
 	int				ctop_pipe[MAXPLAYER][2];
 
+	//this message is a tmp buffer
 	char			msg[BUFSIZE];
+
+	//this message must be sent to the lan
+	char			lan_msg[BUFSIZE];
+
+	//connection list
 	char			con_list[BUFSIZE];
 }					t_env;
 
@@ -80,6 +86,8 @@ void				send_con_close(t_env *env, int idx);
 */
 
 void				update_con_list(t_env *env);
+int					check_con_list(t_env *env, int idx);
+void				send_con_list(t_env *env);
 
 /*
 ** pipe.c
@@ -111,7 +119,7 @@ void				init_comtab(t_com *tab, int s);
 ** communication_handler.c
 */
 
-int					communication_handler(t_env env, int idx, int sock);
+int					communication_handler(t_env *env, int idx, int sock);
 
 /*
 ** connection_handler.c
