@@ -17,11 +17,17 @@ var		wsclient = function ()
 		if (wasClean)
 		{
 			console.log("Connection closed normally !");
+			document.getElementsByTagName("body")[0].innerHTML += "Connection closed normally ! : " + 
+			+ reason + "(Code : " + code + ") !";
+			document.getElementsByTagName("body")[0].innerHTML += '<br/><br/><span style="color:red">RELOAD THE PAGE</span>';
 		}
 		else
 		{
 			console.log("Connection closed with message : " + 
 			+ reason + "(Code : " + code + ") !");
+			document.getElementsByTagName("body")[0].innerHTML += "Connection closed with message : " + 
+			+ reason + "(Code : " + code + ") !";
+			document.getElementsByTagName("body")[0].innerHTML += '<br/><br/><span style="color:red">RELOAD THE PAGE</span>';
 		}
 	};
 
@@ -29,7 +35,8 @@ var		wsclient = function ()
 	{
 		console.log("Socket Error !");
 		var elem = document.getElementsByTagName("body");
-		elem[0].innerHTML += "Error : " + event;
+		document.getElementsByTagName("body")[0].innerHTML += "Wrong socket Error : ";
+		document.getElementsByTagName("body")[0].innerHTML += '<br/><br/><span style="color:red">RELOAD THE PAGE</span>';
 	};
 
 	var		ws_onmessage = function (event)
@@ -40,6 +47,29 @@ var		wsclient = function ()
 			if (typeof event.data === "string")
 			{
 				console.log(event.data);
+				var data = event.data.split("/");
+				console.log(data);
+				if (data && data.length > 0)
+				{
+					player_id = parseInt(data[0]);
+					document.getElementById('head-id').innerHTML = player_id + 1;
+					console.log(id = player_id);
+					var list = data[data.length - 1].split(";");
+					// list = list.filter(v=>v!='');
+					// console.log(list);
+					var room = document.getElementById('room');
+					room.innerHTML = "";
+					for (var i = 0; i < list.length; i++)
+					{
+						if (list[i])
+						{
+							room.innerHTML += '<li class="placement-hr"><span style="margin:auto">P'
+										+ (i + 1) + ' - ' + list[i] + ' - 0 pts</span><span class="color-yel" style="display:none">(master)</span></li>'
+						}
+
+					}
+
+				}
 			}
 		}
 	};
@@ -56,6 +86,7 @@ var		wsclient = function ()
 	var host_addr = window.prompt("Enter your IP adress");
 	var host_port = window.prompt("Enter port number");
 
+	var player_id = -1;
 	var	e_gameState = (function () {
 		var n = 0;
 		return ({
