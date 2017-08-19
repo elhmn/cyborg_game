@@ -46,7 +46,7 @@ int					put_addr(struct sockaddr *addr, socklen_t len)
 		fprintf(stderr, "getnameinfo: %s\n", gai_strerror(s));
 		return (-1);
 	}
-	fprintf(stdout, "IP = [%s] , PORT = [%s] \n",
+	fprintf(stdout, "ip = [%s] , port = [%s] \n",
 			hostbuf, servbuf);
 	return (0);
 }
@@ -273,7 +273,7 @@ int					choose_sock_idx(t_env e, int idx)
 		return (idx);
 	else
 	{
-		for (i = 0; i < 4; i++)
+		for (i = 0; i < MAXPLAYER; i++)
 		{
 			if (e.com_tab[i].sock == -1)
 				return (i);
@@ -286,12 +286,84 @@ int					isfull(t_env e)
 {
 	int		i;
 
-	for (i = 0; i < 4; i++)
+	for (i = 0; i < MAXPLAYER; i++)
 	{
 		if (e.com_tab[i].sock == -1)
 			return (0);
 	}
 	return (1);
+}
+
+void				get_ip(char *buf, int sock)
+{
+	socklen_t						len;
+	struct sockaddr_in				addr;
+	char							hostbuf[NI_MAXHOST];
+	char							servbuf[NI_MAXSERV];
+	int								s;
+
+	if (buf)
+	{
+		len = sizeof(struct sockaddr_in);
+		if (getpeername(sock, (struct sockaddr*)&addr, &len) < 0)
+		{
+			perror("getpeername");
+			exit(EXIT_FAILURE);	
+		}
+		fprintf(stdout, "getip Peer : ");//_DEBUG_//
+
+		//get ip info
+		if ((s = getnameinfo((struct sockaddr*)&addr, len, hostbuf, NI_MAXHOST,
+							servbuf, NI_MAXSERV, NI_NUMERICHOST
+							| NI_NUMERICSERV)) != 0)
+		{
+			fprintf(stderr, "getnameinfo: %s\n", gai_strerror(s));
+			exit(EXIT_FAILURE);
+		}
+		fprintf(stdout, "ip = [%s] , port = [%s] \n",
+				hostbuf, servbuf);
+		strcpy(buf, hostbuf);
+		fprintf(stdout, "ip = [%s]\n", buf);
+	}
+}
+
+void				check_deconnection(t_env env)
+{
+	char				**tab;
+	unsigned char		*buftmp;
+	int					i;
+
+	(void)env;
+	i = 0;
+	buftmp = NULL;
+	//father pipe com event handler
+	for (i = 0; i < MAXPLAYER; i++)
+	{
+// 			fprintf(stdout, "[%d]\n", i);
+		if (env.com_tab[i].sock == -1)
+			break ;
+		buftmp = pipe_com_read(env.ctop_pipe[i][0]);
+// 			fprintf(stdout, "je suis con\n");
+		//parse message
+		if (buftmp)
+		{
+// 				fprintf(stdout, "buftmp = [%s]\n", buftmp);
+			tab = ft_strsplit((char*)buftmp, ':');
+			if (tab)
+			{
+// 					show_tab(tab);
+				if (!strcmp((const char*)tab[0], "con")
+							&& !strcmp((const char*)tab[1], "close"))
+				{
+					env.com_tab[i].sock = -1;
+					env.com_tab[i].pid = -1;
+// 						fprintf(stdout, "Message get [%d]\n", i);
+				}
+				free(tab);
+			}
+			free(buftmp);
+		}
+	}
 }
 
 int					connection_handler(int sock)
@@ -302,17 +374,14 @@ int					connection_handler(int sock)
 	int					i;
 	int					idx;
 
-	char				**tab;
-	unsigned char		*buftmp;
 	char				msg[BUFSIZE];
 	socklen_t			len;
 	struct sockaddr_in	addr;
 
 	full = 0;
 	idx = 0;
-	buftmp = NULL;
 	len = sizeof(struct sockaddr_in);
-	init_comtab(env.com_tab, 4);
+	init_comtab(env.com_tab, MAXPLAYER);
 
 	if (pipe(env.ptoc_pipe) == -1)
 	{
@@ -331,9 +400,8 @@ int					connection_handler(int sock)
 	{
 		if (!isfull(env))
 		{
-			put_comtab(env.com_tab, 4);//_DEBUG_//
+			put_comtab(env.com_tab, MAXPLAYER);//_DEBUG_//
 			memset(&addr, 0, len);
-			fprintf(stdout, "bef main : idx = [%d]\n", idx);//_DEBUG_//
 			if ((sock_com = accept(sock, (struct sockaddr*)&addr, &len)) < 0)
 			{
 				perror("accept");
@@ -341,8 +409,6 @@ int					connection_handler(int sock)
 			}
 			idx = choose_sock_idx(env, idx);
 			env.com_tab[idx].sock = sock_com;
-			put_comtab(env.com_tab, 4);//_DEBUG_//
-			fprintf(stdout, "main : idx = [%d]\n", idx);//_DEBUG_//
 			if (pipe(env.ctop_pipe[idx]) == -1)
 			{
 				perror("pipe");
@@ -362,17 +428,15 @@ int					connection_handler(int sock)
 					//child close ctop output
 					close(env.ctop_pipe[idx][0]);
 
+					fprintf(stdout, "sock_com = [%d]\n", sock_com);
+					//handle communication beetween socket and web clients
 					communication_handler(env, idx, sock_com);
 
 					//send close message
-					strcpy(msg, "con:close:");
-					char		tmp[BUFSIZE];
-					strcat(msg, cvtInt(tmp, getpid()));
+					memset(msg, 0, BUFSIZE);
+					strcpy(msg, "con:close");
 					pipe_com_write(env.ctop_pipe[idx][1], msg);
 
-					fprintf(stdout, "idx = [%d]\n", idx);//_DEBUG_////_DEBUG_//
-// 					env.com_tab[idx] = -1;
-// 					idx;
 					fprintf(stdout, "closed ! index = [%d] \n", idx);//_DEBUG_//
 					close(env.ctop_pipe[idx][0]);
 					close(env.ctop_pipe[idx][1]);
@@ -384,6 +448,13 @@ int					connection_handler(int sock)
 
 				//father
  				default:
+
+					//keep ip
+// 					get_ip(env.com_tab[idx].ip, sock_com);
+
+// 					//father pipe com event handler
+// 					check_deconnection(env);
+
  					close(sock_com);
 
 					//father close ptoc input
@@ -391,7 +462,24 @@ int					connection_handler(int sock)
 
 					//father close ctop output
 					close(env.ctop_pipe[idx][1]);
+				
 	 				signal(SIGCHLD, SIG_IGN); /* that's dirty */
+	
+					//send connection message
+					memset(msg, 0, BUFSIZE);
+					strcpy(msg, "con:open:");
+					for (i = 0; i < MAXPLAYER; i++)
+					{
+						if (env.com_tab[i].sock == -1)
+							continue;
+						if (i != 0)
+							strcat(msg, ";");
+						strcat(msg, env.com_tab[i].ip);
+					}
+					put_comtab(env.com_tab, MAXPLAYER);//_DEBUG_//
+					fprintf(stdout, "msg [%s]\n", msg);//_DEBUG_//
+// 					pipe_com_write(env.ptoc_pipe[idx][1], msg);
+ 					break ;
 			}
 		}
 		else
@@ -400,38 +488,11 @@ int					connection_handler(int sock)
 			{
 				full = 1;
 				usleep(3000);
-				fprintf(stdout, "Host reached its limit and can't handle more than 4 clients!\n");
+				fprintf(stdout, "Host reached its limit and can't handle more than %d clients!\n", MAXPLAYER);
 			}
 		}
-		(void)tab;
-		(void)i;
-		(void)buftmp;
 		//father pipe com event handler
- 		for (i = 0; i < 4; i++)
- 		{
-// 			fprintf(stdout, "[%d]\n", i);
-			if (env.com_tab[i].sock == -1)
-				break ;
- 			buftmp = pipe_com_read(env.ctop_pipe[i][0]);
-// 			fprintf(stdout, "je suis con\n");
-			//parse message
-			if (buftmp)
-			{
-// 				fprintf(stdout, "buftmp = [%s]\n", buftmp);
-				tab = ft_strsplit((char*)buftmp, ':');
-				if (tab)
-				{
-// 					show_tab(tab);
-					if (tab[0] && !strcmp((const char*)tab[0], "con"))
-					{
-						env.com_tab[i].sock = -1;
-// 						fprintf(stdout, "Message get [%d]\n", i);
-					}
-					free(tab);
-				}
-				free(buftmp);
-			}
- 		}
+		check_deconnection(env);
 	}
 	return (0);
 }
