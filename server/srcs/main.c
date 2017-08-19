@@ -185,6 +185,14 @@ int					communication_handler(t_env env, int idx, int sock)
 	event.fd = sock;
 	event.events = POLLIN;
 	wslay_event_context_server_init(&ctx, &callbacks, &session);
+	
+	struct wslay_event_msg msgarg;
+
+	msgarg.opcode = WSLAY_TEXT_FRAME;
+	msgarg.msg = (const uint8_t*)"Bonjour";
+	msgarg.msg_length = strlen((const char*)msgarg.msg);
+	wslay_event_queue_msg(ctx, &msgarg);
+
 	while(wslay_event_want_read(ctx) || wslay_event_want_write(ctx))
 	{
 		if(poll(&event, 1, -1) == -1)
@@ -327,7 +335,7 @@ void				get_ip(char *buf, int sock)
 	}
 }
 
-void				check_deconnection(t_env env)
+void				check_deconnection(t_env *env)
 {
 	char				**tab;
 	unsigned char		*buftmp;
@@ -339,25 +347,25 @@ void				check_deconnection(t_env env)
 	//father pipe com event handler
 	for (i = 0; i < MAXPLAYER; i++)
 	{
-// 			fprintf(stdout, "[%d]\n", i);
-		if (env.com_tab[i].sock == -1)
-			break ;
-		buftmp = pipe_com_read(env.ctop_pipe[i][0]);
-// 			fprintf(stdout, "je suis con\n");
+// 		fprintf(stdout, "[%d]\n", i);
+		if (env->com_tab[i].sock == -1)
+			continue ;
+		buftmp = pipe_com_read(env->ctop_pipe[i][0]);
+// 		fprintf(stdout, "je suis con\n");
 		//parse message
 		if (buftmp)
 		{
-// 				fprintf(stdout, "buftmp = [%s]\n", buftmp);
+// 			fprintf(stdout, "buftmp = [%s]\n", buftmp);
 			tab = ft_strsplit((char*)buftmp, ':');
 			if (tab)
 			{
-// 					show_tab(tab);
+// 				show_tab(tab);
 				if (!strcmp((const char*)tab[0], "con")
 							&& !strcmp((const char*)tab[1], "close"))
 				{
-					env.com_tab[i].sock = -1;
-					env.com_tab[i].pid = -1;
-// 						fprintf(stdout, "Message get [%d]\n", i);
+					env->com_tab[i].sock = -1;
+					env->com_tab[i].pid = -1;
+// 					fprintf(stdout, "Message get [%d]\n", i);
 				}
 				free(tab);
 			}
@@ -450,10 +458,10 @@ int					connection_handler(int sock)
  				default:
 
 					//keep ip
-// 					get_ip(env.com_tab[idx].ip, sock_com);
+					get_ip(env.com_tab[idx].ip, sock_com);
 
 // 					//father pipe com event handler
-// 					check_deconnection(env);
+ 					check_deconnection(&env);
 
  					close(sock_com);
 
@@ -492,7 +500,7 @@ int					connection_handler(int sock)
 			}
 		}
 		//father pipe com event handler
-		check_deconnection(env);
+		check_deconnection(&env);
 	}
 	return (0);
 }
