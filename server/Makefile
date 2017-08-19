@@ -4,7 +4,9 @@ SRCDIR = ./srcs/
 
 OBJDIR = ./objs/
 
-SRC = main.c wslay_callback.c http_handshake.c tools.c
+SRC = main.c wslay_callback.c http_handshake.c tools.c child_to_parent.c \
+		parent_to_child.c socket.c pipe.c connection_handler.c \
+		communication_handler.c environment.c
 
 SRCS = $(addprefix $(SRCDIR), $(SRC))
 
