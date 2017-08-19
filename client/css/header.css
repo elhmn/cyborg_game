@@ -1,0 +1,83 @@
+body>*
+{
+	margin: auto;
+}
+
+header
+{
+	/*background-color: blue;*/
+	min-height:200px
+}
+
+header div:first-child
+{
+	min-height: 100px;
+	width: 100%;
+	border-bottom: solid 1px ;
+}
+
+section
+{
+	min-height:400px;
+	width:100%;
+	max-width: 39rem;
+	/*background-color:blue;*/
+}
+
+section>*
+{
+	margin: auto;
+}
+
+#room
+{
+	position: relative;
+	/*background-color: yellow;*/
+	height:100%;
+	width: 100%;
+}
+
+#room>li>*
+{
+	margin: auto;
+}
+
+#room>li span:last-child
+{
+	margin-right:0px;
+}
+
+#room>li span:first-child
+{
+	margin-left:0px;
+}
+
+#room>li
+{
+	width:100%;
+	margin-bottom:10px;
+}
+
+#room>*
+{
+	margin: auto;
+}
+
+.button-m-3
+{
+	padding:0;
+	width:100px;
+	height: 40px;
+	margin-right: auto;
+	cursor: pointer;
+}
+
+.button-m-3 p
+{
+	margin: auto;
+}
+
+footer
+{
+	margin-top:100px;
+}

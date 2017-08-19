@@ -1,4 +1,4 @@
-NAME = server
+NAME = ws_server
 
 SRCDIR = ./srcs/
 
