@@ -100,7 +100,7 @@ var		wsclient = function ()
 					gameEnd : n++
 		});
 	})();
-	
+
 	var gameState = e_gameState.waitRoom;
 	console.log(e_gameState);
 	console.log(gameState);

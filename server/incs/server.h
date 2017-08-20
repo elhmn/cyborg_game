@@ -16,7 +16,12 @@
 #include <arpa/inet.h>
 #include <signal.h>
 
+/*
+** Realtime signal definition
+*/
+
 # define SIGRT_CLOSE	(SIGRTMIN)
+
 # define MAXPLAYER		4
 # define BUFSIZE		1024
 
@@ -30,6 +35,15 @@ typedef struct		s_com
 typedef struct		s_env
 {
 	t_com			com_tab[MAXPLAYER];
+
+	//player points
+	int				pts[MAXPLAYER];
+
+	//player choice
+	int				choice[MAXPLAYER];
+
+	//game master index
+	int				master_idx;
 
 	//parent to child pipe
 	int				ptoc_pipe[MAXPLAYER][2];
@@ -45,6 +59,9 @@ typedef struct		s_env
 
 	//connection list
 	char			con_list[BUFSIZE];
+
+	int				ctop_update;
+	int				ptoc_update;
 }					t_env;
 
 /*
@@ -78,7 +95,7 @@ void				show_tab(char **tab);
 ** child_to_parent.c
 */
 
-void				check_deconnection(t_env *env);
+int					check_deconnection(t_env *env);
 void				send_con_close(t_env *env, int idx);
 
 /*
@@ -114,6 +131,16 @@ int					create_socket_stream_ipv4(char *host_name,
 
 void				put_comtab(t_com *tab, int s);
 void				init_comtab(t_com *tab, int s);
+void				init_env(t_env *env);
+
+//Check whether the was a parent to child communication or not
+int					isptoc(t_env *env);
+
+//Check whether the was a child to parent communication or not
+int					isctop(t_env *env);
+
+void				set_ptoc(t_env *env);
+void				set_ctop(t_env *env);
 
 /*
 ** communication_handler.c

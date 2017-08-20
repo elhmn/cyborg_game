@@ -70,9 +70,33 @@ static int			isfull(t_env e)
 	return (1);
 }
 
+/*
+** Here I set env as global cus I wanted to use signal
+** to handle basic IPC communication instead of sigaction
+*/
+
+t_env				g_env;
+
+void				signal_handler(int sig)
+{
+	if (sig == SIGRT_CLOSE)
+	{
+		fprintf(stdout, "je suis con");//_DEBUG_//
+		//father pipe com event handler
+		if (check_deconnection(&g_env))
+		{
+// 			fprintf(stdout, "je me suis deconnecte !\n");
+			// Update connection list
+			update_con_list(&g_env);
+
+			// Send connection list to children
+			send_con_list(&g_env);
+		}
+	}
+}
+
 int					connection_handler(int sock)
 {
-	t_env				env;
 	int					sock_com;
 	int					full;
 	int					idx;
@@ -83,7 +107,7 @@ int					connection_handler(int sock)
 	full = 0;
 	idx = 0;
 	len = sizeof(struct sockaddr_in);
-	init_comtab(env.com_tab, MAXPLAYER);
+	init_comtab(g_env.com_tab, MAXPLAYER);
 
 
 	//inform kernel that we want to receive connection on that socket
@@ -94,35 +118,35 @@ int					connection_handler(int sock)
 	}
 	while (!quit_server())
 	{
-		if (!isfull(env))
+		if (!isfull(g_env))
 		{
-			put_comtab(env.com_tab, MAXPLAYER);//_DEBUG_//
+			put_comtab(g_env.com_tab, MAXPLAYER);//_DEBUG_//
 			memset(&addr, 0, len);
 			if ((sock_com = accept(sock, (struct sockaddr*)&addr, &len)) < 0)
 			{
 				perror("accept");
 				return (-1);
 			}
-			idx = choose_sock_idx(env, idx);
-			env.com_tab[idx].sock = sock_com;
+			idx = choose_sock_idx(g_env, idx);
+			g_env.com_tab[idx].sock = sock_com;
 			
 			//init child to parent pipes
-			if (pipe(env.ctop_pipe[idx]) == -1)
+			if (pipe(g_env.ctop_pipe[idx]) == -1)
 			{
 				perror("pipe");
 				exit(EXIT_FAILURE);
 			}
-			make_non_block(env.ctop_pipe[idx][0]);
-			make_non_block(env.ctop_pipe[idx][1]);
+			make_non_block(g_env.ctop_pipe[idx][0]);
+			make_non_block(g_env.ctop_pipe[idx][1]);
 
 			//init parent to child pipes
-			if (pipe(env.ptoc_pipe[idx]) == -1)
+			if (pipe(g_env.ptoc_pipe[idx]) == -1)
 			{
 				perror("pipe");
 				exit(EXIT_FAILURE);
 			}
-			make_non_block(env.ptoc_pipe[idx][0]);
-			make_non_block(env.ptoc_pipe[idx][1]);
+			make_non_block(g_env.ptoc_pipe[idx][0]);
+			make_non_block(g_env.ptoc_pipe[idx][1]);
 			switch (fork())
 			{
 				//child
@@ -130,22 +154,23 @@ int					connection_handler(int sock)
 					close(sock);
 
 					//child close ptoc input
-					close(env.ptoc_pipe[idx][1]);
+					close(g_env.ptoc_pipe[idx][1]);
 
 					//child close ctop output
-					close(env.ctop_pipe[idx][0]);
+					close(g_env.ctop_pipe[idx][0]);
 
 					fprintf(stdout, "sock_com = [%d]\n", sock_com);
 					//handle communication beetween socket and web clients
-					communication_handler(&env, idx, sock_com);
+					communication_handler(&g_env, idx, sock_com);
 
 					//send close message
-					send_con_close(&env, idx);
+					send_con_close(&g_env, idx);
+					kill(getppid(), SIGRT_CLOSE);
 
-					close(env.ctop_pipe[idx][0]);
-					close(env.ctop_pipe[idx][1]);
-					close(env.ptoc_pipe[idx][0]);
-					close(env.ptoc_pipe[idx][1]);
+					close(g_env.ctop_pipe[idx][0]);
+					close(g_env.ctop_pipe[idx][1]);
+					close(g_env.ptoc_pipe[idx][0]);
+					close(g_env.ptoc_pipe[idx][1]);
  					exit(EXIT_SUCCESS);
 
 				case -1:
@@ -156,27 +181,27 @@ int					connection_handler(int sock)
  				default:
 
 					//keep ip
-					get_ip(env.com_tab[idx].ip, sock_com);
-
+					get_ip(g_env.com_tab[idx].ip, sock_com);
  					//father pipe com event handler
- 					check_deconnection(&env);
+ 					check_deconnection(&g_env);
 
 					// Update connection list
-					update_con_list(&env);
+					update_con_list(&g_env);
 
 					// Send connection list to children
-					send_con_list(&env);
+					send_con_list(&g_env);
 
  					close(sock_com);
 
 					//father close ptoc input
-					close(env.ptoc_pipe[idx][0]);
+					close(g_env.ptoc_pipe[idx][0]);
 
 					//father close ctop output
-					close(env.ctop_pipe[idx][1]);
+					close(g_env.ctop_pipe[idx][1]);
 
+					//Signal handler
 	 				signal(SIGCHLD, SIG_IGN); /* that's dirty */
-
+	 				signal(SIGRT_CLOSE, signal_handler); /* that's dirty */
 
  					break ;
 			}
@@ -191,8 +216,17 @@ int					connection_handler(int sock)
 						MAXPLAYER);
 			}
 		}
+
 		//father pipe com event handler
-		check_deconnection(&env);
+		if (check_deconnection(&g_env))
+		{
+// 			fprintf(stdout, "je me suis deconnecte !\n");
+			// Update connection list
+			update_con_list(&g_env);
+
+			// Send connection list to children
+			send_con_list(&g_env);
+		}
 	}
 	return (0);
 }

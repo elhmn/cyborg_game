@@ -2,23 +2,30 @@
 #include "server.h"
 #include "websocket.h"
 
-void				check_deconnection(t_env *env)
+int				check_deconnection(t_env *env)
 {
 	char				**tab;
 	unsigned char		*buftmp;
 	int					i;
+	int					ret;
 
 	(void)env;
 	i = 0;
+	ret = 0;
 	buftmp = NULL;
+	if (!env)
+	{
+		fprintf(stdout, "Error : env set to NULL!\n");
+		return (0);
+	}
 	//father pipe com event handler
 	for (i = 0; i < MAXPLAYER; i++)
 	{
 // 		fprintf(stdout, "[%d]\n", i);
+//  		fprintf(stdout, "buftmp = [%s]\n", buftmp);
 		if (env->com_tab[i].sock == -1)
 			continue ;
 		buftmp = pipe_com_read(env->ctop_pipe[i][0]);
-// 		fprintf(stdout, "je suis con\n");
 		//parse message
 		if (buftmp)
 		{
@@ -33,12 +40,14 @@ void				check_deconnection(t_env *env)
 					env->com_tab[i].sock = -1;
 					env->com_tab[i].pid = -1;
 // 					fprintf(stdout, "Message get [%d]\n", i);
+					ret = 1;
 				}
 				free_tab(&tab);
 			}
 			free(buftmp);
 		}
 	}
+	return (ret);
 }
 
 /*
