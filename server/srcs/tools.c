@@ -42,3 +42,16 @@ void			show_tab(char **tab)
 	}
 	fprintf(stdout, "\n");
 }
+
+void			init_tab(int *tab, int sz, int val)
+{
+	int		i;
+
+	if (tab)
+	{
+		for (i = 0; i < sz; i++)
+		{
+			tab[i] = val;
+		}
+	}
+}

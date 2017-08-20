@@ -22,6 +22,15 @@
 
 # define SIGRT_CLOSE	(SIGRTMIN)
 
+// If child received message
+# define SIGRT_RCV		(SIGRTMIN + 1)
+
+// If room has challenger
+# define SIGRT_CHAL		(SIGRTMIN + 2)
+
+// If room no more has challenger
+# define SIGRT_NOCHAL	(SIGRTMIN + 3)
+
 # define MAXPLAYER		4
 # define BUFSIZE		1024
 
@@ -32,9 +41,24 @@ typedef struct		s_com
 	char	ip[256];
 }					t_com;
 
+enum				e_state
+{
+	WAITROOM,
+	START,
+	CHOOSE,
+	COMPARE,
+	RESULT,
+	EDITROLE,
+	END
+};
+
 typedef struct		s_env
 {
 	t_com			com_tab[MAXPLAYER];
+
+
+	//player ready 
+	int				ready[MAXPLAYER];
 
 	//player points
 	int				pts[MAXPLAYER];
@@ -44,6 +68,9 @@ typedef struct		s_env
 
 	//game master index
 	int				master_idx;
+
+	//game state	e_state
+	int				state;
 
 	//parent to child pipe
 	int				ptoc_pipe[MAXPLAYER][2];
@@ -57,12 +84,26 @@ typedef struct		s_env
 	//this message must be sent to the lan
 	char			lan_msg[BUFSIZE];
 
+	//received message buffer
+	char			rcv_msg[MAXPLAYER][BUFSIZE];
+
+	//child msg reveived index
+	int				rcv_idx;
+
 	//connection list
 	char			con_list[BUFSIZE];
 
 	int				ctop_update;
 	int				ptoc_update;
 }					t_env;
+
+/*
+** fstate used in communication_handler.c
+*/
+
+typedef void				(*fstate)(wslay_event_context_ptr ctx,
+										t_env *env, int idx);
+
 
 /*
 ** wslay_callback.c
@@ -90,21 +131,33 @@ char**				str_split(char* a_str, const char a_delim);
 char 				*cvtInt(char *str, int num);
 void				free_tab(char ***tab);
 void				show_tab(char **tab);
+void				init_tab(int *tab, int sz, int val);
 
 /*
 ** child_to_parent.c
 */
 
 int					check_deconnection(t_env *env);
+int					check_rcv_msg(t_env *env);
 void				send_con_close(t_env *env, int idx);
+void				send_rcv_msg(t_env *env, int idx, char *msg);
+
+/*
+** child_to_client.c
+*/
+
+void				send_text_msg(wslay_event_context_ptr ctx, char *msg);
 
 /*
 ** parent_to_child.c
 */
 
 void				update_con_list(t_env *env);
-int					check_con_list(t_env *env, int idx);
 void				send_con_list(t_env *env);
+int					check_con_list(t_env *env, int idx);
+
+void				send_con_challenger(t_env *env, int state);
+int					check_con_challenger(t_env *env, int idx);
 
 /*
 ** pipe.c
@@ -129,8 +182,8 @@ int					create_socket_stream_ipv4(char *host_name,
 ** environement.c
 */
 
-void				put_comtab(t_com *tab, int s);
-void				init_comtab(t_com *tab, int s);
+void				put_comtab(t_com *tab, int sz);
+void				init_comtab(t_com *tab, int sz);
 void				init_env(t_env *env);
 
 //Check whether the was a parent to child communication or not

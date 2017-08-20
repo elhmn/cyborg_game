@@ -58,6 +58,23 @@ static int			choose_sock_idx(t_env e, int idx)
 	return (idx);
 }
 
+static int			has_challenger(t_env e)
+{
+	int		i;
+	int		n;
+
+	n = 0;
+	for (i = 0; i < MAXPLAYER; i++)
+	{
+		if (e.com_tab[i].sock != -1)
+		{
+			if (++n > 1)
+				return (1);
+		}
+	}
+	return (0);
+}
+
 static int			isfull(t_env e)
 {
 	int		i;
@@ -77,11 +94,11 @@ static int			isfull(t_env e)
 
 t_env				g_env;
 
-void				signal_handler(int sig)
+static void			parent_signal_handler(int sig)
 {
 	if (sig == SIGRT_CLOSE)
 	{
-		fprintf(stdout, "je suis con");//_DEBUG_//
+// // 		fprintf(stdout, "je suis con");//_DEBUG_//
 		//father pipe com event handler
 		if (check_deconnection(&g_env))
 		{
@@ -92,8 +109,26 @@ void				signal_handler(int sig)
 			// Send connection list to children
 			send_con_list(&g_env);
 		}
+		//check if has challenger
+		if (has_challenger(g_env))
+			send_con_challenger(&g_env, 1);
+		else
+			send_con_challenger(&g_env, 0);
+	}
+	else if (sig == SIGRT_RCV)
+	{
+		if (check_rcv_msg(&g_env))
+		{
+			fprintf(stdout, "Parent received message [%s]\n", g_env.rcv_msg[g_env.rcv_idx]);
+		}
 	}
 }
+// 
+// static void			child_signal_handler(int sig)
+// {
+// 	(void)sig;
+// }
+
 
 int					connection_handler(int sock)
 {
@@ -107,8 +142,7 @@ int					connection_handler(int sock)
 	full = 0;
 	idx = 0;
 	len = sizeof(struct sockaddr_in);
-	init_comtab(g_env.com_tab, MAXPLAYER);
-
+	init_env(&g_env);
 
 	//inform kernel that we want to receive connection on that socket
 	if (listen(sock, 5) < 0)
@@ -160,6 +194,7 @@ int					connection_handler(int sock)
 					close(g_env.ctop_pipe[idx][0]);
 
 					fprintf(stdout, "sock_com = [%d]\n", sock_com);
+
 					//handle communication beetween socket and web clients
 					communication_handler(&g_env, idx, sock_com);
 
@@ -182,6 +217,7 @@ int					connection_handler(int sock)
 
 					//keep ip
 					get_ip(g_env.com_tab[idx].ip, sock_com);
+
  					//father pipe com event handler
  					check_deconnection(&g_env);
 
@@ -191,6 +227,13 @@ int					connection_handler(int sock)
 					// Send connection list to children
 					send_con_list(&g_env);
 
+					//check if has challenger
+					if (has_challenger(g_env))
+						send_con_challenger(&g_env, 1);
+					else
+						send_con_challenger(&g_env, 0);
+
+
  					close(sock_com);
 
 					//father close ptoc input
@@ -199,10 +242,10 @@ int					connection_handler(int sock)
 					//father close ctop output
 					close(g_env.ctop_pipe[idx][1]);
 
-					//Signal handler
-	 				signal(SIGCHLD, SIG_IGN); /* that's dirty */
-	 				signal(SIGRT_CLOSE, signal_handler); /* that's dirty */
-
+					//Signal handler /* that's dirty */
+	 				signal(SIGCHLD, SIG_IGN);
+	 				signal(SIGRT_CLOSE, parent_signal_handler);
+	 				signal(SIGRT_RCV, parent_signal_handler);
  					break ;
 			}
 		}

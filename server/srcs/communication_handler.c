@@ -2,6 +2,37 @@
 #include "server.h"
 #include "websocket.h"
 
+static void			fs_waitroom(wslay_event_context_ptr ctx,
+					t_env *env, int idx)
+{
+	if (env)
+	{
+		if (check_con_list(env, idx))
+		{
+// 			fprintf(stdout, "SENT======\n");//_DEBUG_//
+			cvtInt(env->msg, idx);
+			strcat(env->msg, "/");
+			strcat(env->msg, env->lan_msg);
+			send_text_msg(ctx, env->msg);
+		}
+		if (check_con_challenger(env, idx))
+		{
+			cvtInt(env->msg, idx);
+			strcat(env->msg, "/");
+			strcat(env->msg, env->lan_msg);
+			send_text_msg(ctx, env->msg);
+		}
+	}
+}
+
+static void			init_fs_tab(fstate *fs_tab)
+{
+	if (fs_tab)
+	{
+		fs_tab[WAITROOM] = fs_waitroom;
+	}
+}
+
 int					communication_handler(t_env *env, int idx, int sock)
 {
 	wslay_event_context_ptr 		ctx;
@@ -14,11 +45,13 @@ int					communication_handler(t_env *env, int idx, int sock)
 													NULL,
 													on_msg_recv_callback
 												};
-	struct Session 					session = {sock};
+	struct Session 					session = {sock, env, idx};
 	struct pollfd					event;
 	socklen_t						len;
 	struct sockaddr_in				addr;
+	fstate							fs_tab[END];
 
+	init_fs_tab(fs_tab);
 	len = sizeof(struct sockaddr_in);
 	if (getpeername(sock, (struct sockaddr*)&addr, &len) < 0)
 	{
@@ -44,19 +77,8 @@ int					communication_handler(t_env *env, int idx, int sock)
 
 	while(wslay_event_want_read(ctx) || wslay_event_want_write(ctx))
 	{
-		if (check_con_list(env, idx))
-		{
-			fprintf(stdout, "SENT======\n");//_DEBUG_//
-			struct wslay_event_msg msgarg;
-
-			msgarg.opcode = WSLAY_TEXT_FRAME;
-			cvtInt(env->msg, idx);
-			strcat(env->msg, "/");
-			strcat(env->msg, env->lan_msg);
-			msgarg.msg = (const uint8_t*)env->msg;
-			msgarg.msg_length = strlen((const char*)msgarg.msg);
-			wslay_event_queue_msg(ctx, &msgarg);
-		}
+		//Call env->state corresponding function
+		fs_tab[env->state](ctx, env, idx);
 
 		if(poll(&event, 1, -1) == -1)
 		{

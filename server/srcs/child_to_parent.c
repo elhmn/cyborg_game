@@ -65,3 +65,69 @@ void		send_con_close(t_env *env, int idx)
 		fprintf(stdout, "closed ! index = [%d] \n", idx);//_DEBUG_//
 	}
 }
+
+/*
+** send children received message 
+*/
+
+void		send_rcv_msg(t_env *env, int idx, char *msg)
+{
+	if (env)
+	{
+		memset(env->msg, 0, BUFSIZE);
+		strcpy(env->msg, msg);
+		pipe_com_write(env->ctop_pipe[idx][1], env->msg);
+		fprintf(stdout, "reveived message ! from index = [%d] :: [%s]\n", idx, env->msg);//_DEBUG_//
+	}
+}
+
+int				check_rcv_msg(t_env *env)
+{
+	char				**tab;
+	unsigned char		*buftmp;
+	int					i;
+	int					idx;
+	int					ret;
+
+	(void)env;
+	i = 0;
+	ret = 0;
+	buftmp = NULL;
+	if (!env)
+	{
+		fprintf(stdout, "Error : env set to NULL!\n");
+		return (0);
+	}
+	//father pipe com event handler
+	for (i = 0; i < MAXPLAYER; i++)
+	{
+// 		fprintf(stdout, "[%d]\n", i);
+//  		fprintf(stdout, "buftmp = [%s]\n", buftmp);
+		if (env->com_tab[i].sock == -1)
+			continue ;
+		buftmp = pipe_com_read(env->ctop_pipe[i][0]);
+		//parse message
+		if (buftmp)
+		{
+//  		fprintf(stdout, "buftmp = [%s]\n", buftmp);
+			tab = ft_strsplit((char*)buftmp, '/');
+			if (tab)
+			{
+// 				show_tab(tab);
+				idx = atoi(tab[0]);
+				if (idx >= 0
+					&& idx <= MAXPLAYER
+					&& !strcmp((const char*)tab[1], "ws"))
+				{
+					env->rcv_idx = i;
+					strcpy(env->rcv_msg[i], (const char*)buftmp);
+					fprintf(stdout, "Message get [%d]\n", i);
+					ret = 1;
+				}
+				free_tab(&tab);
+			}
+			free(buftmp);
+		}
+	}
+	return (ret);
+}

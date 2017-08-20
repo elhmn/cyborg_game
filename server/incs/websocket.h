@@ -1,6 +1,8 @@
 #ifndef WEBSOCKET_H
 # define WEBSOCKET_H
 
+#include "server.h"
+
 /*
 ** t_ident describe socket identity
 */
@@ -18,7 +20,9 @@ typedef struct		s_ident
 
 struct Session
 {
-  int fd;
+	int		fd;
+	t_env	*env;
+	int		idx;
 };
 
 /*

@@ -9,6 +9,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <wslay/wslay.h>
+#include "libft.h"
 #include "websocket.h"
 #include "server.h"
 
@@ -91,7 +92,11 @@ void			on_msg_recv_callback(wslay_event_context_ptr ctx,
 		const struct wslay_event_on_msg_recv_arg *arg,
 		void *user_data)
 {
+	char			*tmp;
+	struct Session	*session = (struct Session*)user_data;
+
 	(void)user_data;
+	(void)session;
 	/* Echo back non-control message */
 	if(!wslay_is_ctrl_frame(arg->opcode))
 	{
@@ -104,5 +109,18 @@ void			on_msg_recv_callback(wslay_event_context_ptr ctx,
 // 		msgarg.msg = (const uint8_t*)"je suis con";
 // 		msgarg.msg_length = strlen((const char*)msgarg.msg);
 // 		wslay_event_queue_msg(ctx, &msgarg);
+
+		tmp = ft_strnew(arg->msg_length);
+		if (tmp)
+		{
+			ft_strncpy(tmp, (const char*)arg->msg, arg->msg_length);
+			if (strncmp(tmp, "hello", arg->msg_length))
+			{
+				// send message to parent
+				send_rcv_msg(session->env, session->idx, tmp);
+				kill(getppid(), SIGRT_RCV);
+			}
+			free(tmp);
+		}
 	}
 }

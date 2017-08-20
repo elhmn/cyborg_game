@@ -2,14 +2,14 @@
 #include "server.h"
 #include "websocket.h"
 
-void				put_comtab(t_com *tab, int s)
+void				put_comtab(t_com *tab, int sz)
 {
 	int		i;
 
-	for (i = 0; i < s; i++)
+	for (i = 0; i < sz; i++)
 	{
 		fprintf(stdout, "(%d, %d)", tab[i].pid, tab[i].sock);
-		if (i != s - 1)
+		if (i != sz - 1)
 		{
 			fprintf(stdout, "; ");
 		}
@@ -17,16 +17,17 @@ void				put_comtab(t_com *tab, int s)
 	fprintf(stdout, "\n");
 }
 
-void				init_comtab(t_com *tab, int s)
+void				init_comtab(t_com *tab, int sz)
 {
 	int		i;
 
-	for (i = 0; i < s; i++)
+	for (i = 0; i < sz; i++)
 	{
 		tab[i].sock = -1;
 		tab[i].pid = -1;
 	}
 }
+
 
 void				init_env(t_env *env)
 {
@@ -37,6 +38,11 @@ void				init_env(t_env *env)
 	}
 	env->ctop_update = 0;
 	env->ptoc_update = 0;
+	env->state = WAITROOM;
+	init_comtab(env->com_tab, MAXPLAYER);
+	init_tab(env->pts, MAXPLAYER, 0);
+	init_tab(env->ready, MAXPLAYER, 0);
+	init_tab(env->choice, MAXPLAYER, -1);
 }
 
 //Check whether the was a child to parent communication or not
