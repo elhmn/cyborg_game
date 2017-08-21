@@ -107,10 +107,10 @@ int				check_rcv_msg(t_env *env)
 		if (env->com_tab[i].sock == -1)
 			continue ;
 		buftmp = pipe_com_read(env->ctop_pipe[i][0]);
+ 		fprintf(stdout, "check_rcv_msg buftmp = [%s]\n", buftmp);
 		//parse message
 		if (buftmp)
 		{
-//  		fprintf(stdout, "buftmp = [%s]\n", buftmp);
 			tab = ft_strsplit((char*)buftmp, '/');
 			if (tab)
 			{
@@ -143,6 +143,7 @@ int			update_ready_tab(t_env *env, char **tab)
 	int		idx;
 
 	ret = 0;
+	fprintf(stdout, "update ready tab \n");
 	if (env && tab)
 	{
 		idx = atoi(tab[0]);

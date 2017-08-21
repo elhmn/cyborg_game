@@ -39,6 +39,104 @@ var		wsclient = function ()
 		document.getElementsByTagName("body")[0].innerHTML += '<br/><br/><span style="color:red">RELOAD THE PAGE</span>';
 	};
 
+	var		getConList = function (data)
+	{
+		if (data[1] == "ws" && data[2] == "list")
+		{
+			var list = data[data.length - 1].split(";");
+
+			player_id = parseInt(data[0]);
+			document.getElementById('head-id').innerHTML = player_id + 1 + " over " + list.length;
+			// list = list.filter(v=>v!='');
+			// console.log(list);
+			var room = document.getElementById('room');
+			room.innerHTML = "";
+			for (var i = 0; i < list.length; i++)
+			{
+				if (list[i])
+				{
+					room.innerHTML += '<li class="placement-hr"><span>P'
+								+ (i + 1) + ' - ' + list[i] + ' - 0 pts</span><span class="color-yel" style="display:none">(ready)</span></li>'
+				}
+			}
+		}
+	};
+
+	var		getChallenger =  function (data)
+	{
+		if (data[1] == "ws" && data[2] == "challenger")
+		{
+			var		fun_play =  function ()
+			{
+				document.getElementById("btn-play-msg").innerHTML = "Ready ! Waiting for other players...";
+				document.getElementById("btn-play").innerHTML = "starting...";
+				player_ready = true;
+				updateMsg(player_id + "/ws/ready");
+				document.getElementById("btn-play").removeEventListener('click', fun_play);
+			};
+
+			var		fun_wait =  function ()
+			{
+				if (player_ready == false)
+					document.getElementById("btn-play-msg").innerHTML = "You need at least 2 players !";
+			};
+
+			if (data[3] == "1")
+			{
+				if (player_ready == false)
+				{
+					document.getElementById("btn-play").innerHTML = "play";
+					document.getElementById("btn-play").removeEventListener('click', fun_wait);
+					document.getElementById("btn-play").addEventListener('click', fun_play);
+				}
+			}
+			else
+			{
+				if (player_ready == false)
+				{
+					document.getElementById("btn-play").innerHTML = "waiting for connection...";
+					document.getElementById("btn-play").removeEventListener('click', fun_play);
+					document.getElementById("btn-play").addEventListener('click', fun_wait);
+				}
+			}
+		}
+	};
+
+	var		getReady = function (data)
+	{
+		if (data[1] == "ws" && data[2] == "ready")
+		{
+			var list = data[data.length - 1].split(";");
+			var room = document.getElementById('room');
+			var e = room.querySelectorAll("li span:last-child");
+			for (var i = 0; i < list.length; i++)
+			{
+				console.log(e[i]);
+				if (e[i])
+				{
+					if (list[i] == 1)
+					{
+						e[i].style.display = "flex";
+					}
+					else
+					{
+						e[i].style.display = "none";
+					}
+				}
+			}
+		}
+	}
+
+	var		getAllReady = function (data)
+	{
+		if (data[1] == "ws" && data[2] == "allready")
+		{
+			var room = document.getElementById('room');
+			var e = room.querySelectorAll("li span:last-child");
+			console.log("ALL READY");
+		}
+	}
+
 	var		fs_waitRoom = function (event)
 	{
 		if (typeof event.data === "string")
@@ -48,68 +146,17 @@ var		wsclient = function ()
 			console.log(data);
 			if (data && data.length > 0)
 			{
-				player_id = parseInt(data[0]);
-				document.getElementById('head-id').innerHTML = player_id + 1;
-				console.log(id = player_id);
-				if (data[1] == "ws" && data[2] == "list")
-				{
-					var list = data[data.length - 1].split(";");
-					// list = list.filter(v=>v!='');
-					// console.log(list);
-					var room = document.getElementById('room');
-					room.innerHTML = "";
-					for (var i = 0; i < list.length; i++)
-					{
-						if (list[i])
-						{
-							room.innerHTML += '<li class="placement-hr"><span style="margin:auto">P'
-										+ (i + 1) + ' - ' + list[i] + ' - 0 pts</span><span class="color-yel" style="display:none">(master)</span></li>'
-						}
-					}
-				}
-				if (data[1] == "ws" && data[2] == "challenger")
-				{
-					var		fun_play =  function ()
-					{
-						document.getElementById("btn-play-msg").innerHTML = "Ready ! Waiting for other players...";
-						document.getElementById("btn-play").innerHTML = "starting...";
-						player_ready = true;
-						updateMsg(player_id + "/ws/ready");
-						document.getElementById("btn-play").removeEventListener('click', fun_play);
-					};
-
-					var		fun_wait =  function ()
-					{
-						if (player_ready == false)
-							document.getElementById("btn-play-msg").innerHTML = "You need at least 2 players !";
-					};
-
-					if (data[3] == "1")
-					{
-						if (player_ready == false)
-						{
-							document.getElementById("btn-play").innerHTML = "play";
-							document.getElementById("btn-play").removeEventListener('click', fun_wait);
-							document.getElementById("btn-play").addEventListener('click', fun_play);
-						}
-					}
-					else
-					{
-						if (player_ready == false)
-						{
-							document.getElementById("btn-play").innerHTML = "waiting for connection...";
-							document.getElementById("btn-play").removeEventListener('click', fun_play);
-							document.getElementById("btn-play").addEventListener('click', fun_wait);
-						}
-					}
-				}
+				
+				getConList(data);
+				getChallenger(data);
+				getReady(data);
+				getAllReady(data);
 			}
 		}
 	};
 
-	var		ws_onmessage = function (event)
+	var		canConnect = function (event)
 	{
-		console.log(event.data);
 		if (typeof event.data === "string")
 		{
 			console.log(event.data);
@@ -124,10 +171,17 @@ var		wsclient = function ()
 					document.getElementsByTagName("body")[0].innerHTML += "The game room is full, retry later !";
 					document.getElementsByTagName("body")[0].innerHTML += '<br/><br/><span style="color:red">RELOAD THE PAGE</span>';
 					ws.close();
-					return ;
+					return (false);
 				}
 			}
 		}
+		return (true);
+	}
+
+	var		ws_onmessage = function (event)
+	{
+		console.log(event.data);
+		canConnect(event);
 		var fs_tab = {
 			waitRoom : fs_waitRoom
 		};
@@ -198,7 +252,7 @@ var		wsclient = function ()
 		ws.onclose = ws_onclose;
 		ws.onerror = ws_onerror;
 		ws.onmessage = ws_onmessage;
-		setInterval(ws_request, 500);
+		setInterval(ws_request, 1);
 	}
 };
 

@@ -21,7 +21,6 @@ void			free_tab(char ***tab)
 	if (tab)
 	{
 		tmp = *tab;
-		show_tab(tmp);
 		while (tmp && *tmp)
 		{
 			free(*tmp);

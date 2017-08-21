@@ -48,10 +48,9 @@ void		send_con_list(t_env *env)
 	}
 }
 
-int			check_con_list(t_env *env, int idx)
+int			check_con_list(t_env *env, int idx, unsigned char *buftmp)
 {
 	char				**tab;
-	unsigned char		*buftmp;
 	int					ret;
 
 	ret = 0;
@@ -60,7 +59,6 @@ int			check_con_list(t_env *env, int idx)
 		fprintf(stdout, "Error : env set to NULL!\n");
 		return (0);
 	}
-	buftmp = pipe_com_read(env->ptoc_pipe[idx][0]);
 	if (buftmp)
 	{
 //  		fprintf(stdout, "check con buftmp = [%s]\n", buftmp);//_DEBUG_//
@@ -71,16 +69,15 @@ int			check_con_list(t_env *env, int idx)
 			if (!strcmp((const char*)tab[0], "con")
 						&& !strcmp((const char*)tab[1], "list"))
 			{
-				memset(env->lan_msg, 0, BUFSIZE);
+				memset(env->lan_msg[idx], 0, BUFSIZE);
 				if (tab[2])
-					strcpy(env->lan_msg, tab[2]);
-				fprintf(stdout, "check con lan_msg = [%s]\n", env->lan_msg);//_DEBUG_//
+					strcpy(env->lan_msg[idx], tab[2]);
+				fprintf(stdout, "check con lan_msg[%d] = [%s]\n", idx, env->lan_msg[idx]);//_DEBUG_//
 				fprintf(stdout, "connection list sent\n");//_DEBUG_//
 				ret = 1;
 			}
 			free_tab(&tab);
 		}
-		free(buftmp);
 	}
 	return (ret);
 }
@@ -109,10 +106,9 @@ void		send_con_challenger(t_env *env, int state)
 	}
 }
 
-int				check_con_challenger(t_env *env, int idx)
+int				check_con_challenger(t_env *env, int idx, unsigned char *buftmp)
 {
 	char				**tab;
-	unsigned char		*buftmp;
 	int					ret;
 
 	ret = 0;
@@ -121,7 +117,6 @@ int				check_con_challenger(t_env *env, int idx)
 		fprintf(stdout, "Error : env set to NULL!\n");
 		return (0);
 	}
-	buftmp = pipe_com_read(env->ptoc_pipe[idx][0]);
 	if (buftmp)
 	{
 //  		fprintf(stdout, "check con buftmp = [%s]\n", buftmp);//_DEBUG_//
@@ -132,21 +127,87 @@ int				check_con_challenger(t_env *env, int idx)
 			if (!strcmp((const char*)tab[0], "con")
 						&& !strcmp((const char*)tab[1], "challenger"))
 			{
-				memset(env->lan_msg, 0, BUFSIZE);
+				memset(env->lan_msg[idx], 0, BUFSIZE);
 				if (tab[2])
-					strcpy(env->lan_msg, tab[2]);
-				fprintf(stdout, "check con lan_msg = [%s]\n", env->lan_msg);//_DEBUG_//
+					strcpy(env->lan_msg[idx], tab[2]);
+				fprintf(stdout, "check con challenger lan_msg[%d] = [%s]\n", idx, env->lan_msg[idx]);//_DEBUG_//
 				fprintf(stdout, "connection challenger sent\n");//_DEBUG_//
 				ret = 1;
 			}
-			free_tab(&tab);
 		}
-		free(buftmp);
 	}
 	return (ret);
 }
 
 void			send_ws_ready(t_env *env)
+{
+	int		i;
+	int		j;
+	char	buf[256];
+
+	i = 0;
+	if (env)
+	{
+		for (i = 0; i < MAXPLAYER; i++)
+		{
+			if (env->com_tab[i].sock == -1)
+				continue ;
+			memset(env->msg, 0, BUFSIZE);
+			strcpy(env->msg, cvtInt(buf, i));
+			strcat(env->msg, "/ws/ready/");
+			for (j = 0; j < MAXPLAYER; j++)
+			{
+				fprintf(stdout, "env->ready = [%d]\n", env->ready[j]);
+				strcat(env->msg, cvtInt(buf, env->ready[j]));
+				if (j != MAXPLAYER - 1)
+					strcat(env->msg, ";");
+			}
+// 			strcpy(env->msg, (char*)env->rcv_msg[env->rcv_idx]);
+			pipe_com_write(env->ptoc_pipe[i][1], env->msg);
+			fprintf(stdout, "send ws ready [%d][%s]\n",
+					i, env->msg);//_DEBUG_//
+		}
+	}
+}
+
+int				check_ws_ready(t_env *env, int idx, unsigned char *buftmp)
+{
+	char				**tab;
+	int					tmp;
+	int					ret;
+
+	ret = 0;
+	if (!env)
+	{
+		fprintf(stdout, "Error : env set to NULL!\n");
+		return (0);
+	}
+//  	fprintf(stdout, "check spe con buftmp = [%s]\n", buftmp);//_DEBUG_//
+	if (buftmp)
+	{
+		tab = ft_strsplit((char*)buftmp, '/');
+		if (tab)
+		{
+// 			show_tab(tab);
+			tmp = atoi(tab[0]);
+ 			if (tmp >= 0
+			&& tmp <= MAXPLAYER
+			&& !strcmp((const char*)tab[1], "ws")
+			&& !strcmp((const char*)tab[2], "ready"))
+			{
+				memset(env->lan_msg[idx], 0, BUFSIZE);
+				strcpy(env->lan_msg[idx], (const char *)buftmp);
+				fprintf(stdout, "check ws ready lan_msg[%d] = [%s]\n", idx, env->lan_msg[idx]);//_DEBUG_//
+				fprintf(stdout, "ready ws sent\n");//_DEBUG_//
+				ret = 1;
+			}
+			free_tab(&tab);
+		}
+	}
+	return (ret);
+}
+
+void			send_ws_allready(t_env *env)
 {
 	int		i;
 
@@ -158,18 +219,17 @@ void			send_ws_ready(t_env *env)
 			if (env->com_tab[i].sock == -1)
 				continue ;
 			memset(env->msg, 0, BUFSIZE);
-			strcpy(env->msg, (char*)env->rcv_msg[env->rcv_idx]);
+			strcpy(env->msg, "ws/allready");
 			pipe_com_write(env->ptoc_pipe[i][1], env->msg);
-			fprintf(stdout, "send ws ready [%d][%s]\n",
+			fprintf(stdout, "send ws all ready [%d][%s]\n",
 					i, env->msg);//_DEBUG_//
 		}
 	}
 }
 
-int				check_ws_ready(t_env *env, int idx)
+int				check_ws_allready(t_env *env, int idx, unsigned char *buftmp)
 {
 	char				**tab;
-	unsigned char		*buftmp;
 	int					ret;
 
 	ret = 0;
@@ -178,31 +238,24 @@ int				check_ws_ready(t_env *env, int idx)
 		fprintf(stdout, "Error : env set to NULL!\n");
 		return (0);
 	}
-	buftmp = pipe_com_read(env->ptoc_pipe[idx][0]);
- 	fprintf(stdout, "check spe con buftmp = [%s]\n", buftmp);//_DEBUG_//
 	if (buftmp)
 	{
- 	fprintf(stdout, "check spe con buftmp = [%s]\n", buftmp);//_DEBUG_//
 		tab = ft_strsplit((char*)buftmp, '/');
 		if (tab)
 		{
- 	fprintf(stdout, "check spe con buftmp = [%s]\n", buftmp);//_DEBUG_//
+ 			fprintf(stdout, "check spe ws allready buftmp = [%s]\n", buftmp);//_DEBUG_//
 // 			show_tab(tab);
- 			if (idx >= 0
-			&& idx <= MAXPLAYER
-			&& !strcmp((const char*)tab[1], "ws")
-			&& !strcmp((const char*)tab[2], "ready"))
+ 			if (!strcmp((const char*)tab[0], "ws")
+			&& !strcmp((const char*)tab[1], "allready"))
 			{
-				memset(env->lan_msg, 0, BUFSIZE);
-				if (tab[2])
-					strcpy(env->lan_msg, (const char*)buftmp);
-				fprintf(stdout, "check ws ready = [%s]\n", env->lan_msg);//_DEBUG_//
-				fprintf(stdout, "ready ws sent\n");//_DEBUG_//
+				memset(env->lan_msg[idx], 0, BUFSIZE);
+				strcpy(env->lan_msg[idx], (const char *)buftmp);
+				fprintf(stdout, "check ws all ready lan_msg[%d] = [%s]\n", idx, env->lan_msg[idx]);//_DEBUG_//
+				fprintf(stdout, "all ready ws sent\n");//_DEBUG_//
 				ret = 1;
 			}
 			free_tab(&tab);
 		}
-		free(buftmp);
 	}
 	return (ret);
 }

@@ -5,29 +5,44 @@
 static void			fs_waitroom(wslay_event_context_ptr ctx,
 					t_env *env, int idx)
 {
+	unsigned char *buftmp;
+
 	if (env)
 	{
-		if (check_con_list(env, idx))
+		buftmp = pipe_com_read(env->ptoc_pipe[idx][0]);
+
+// 		fprintf(stdout, "[%s] [%d], BUFTMP = [%s]\n", __FILE__, __LINE__, buftmp);
+		if (buftmp)
 		{
-			cvtInt(env->msg, idx);
-			strcat(env->msg, "/");
-			strcat(env->msg, env->lan_msg);
-			send_text_msg(ctx, env->msg);
-		}
-		if (check_con_challenger(env, idx))
-		{
-			cvtInt(env->msg, idx);
-			strcat(env->msg, "/");
-			strcat(env->msg, env->lan_msg);
-			send_text_msg(ctx, env->msg);
-		}
-		if (check_ws_ready(env, idx))
-		{
-			fprintf(stdout, "je suis con\n");
-// 			cvtInt(env->msg, idx);
-// 			strcat(env->msg, "/");
-			strcat(env->msg, env->lan_msg);
-			send_text_msg(ctx, env->msg);
+			if (check_con_list(env, idx, buftmp))
+			{
+				cvtInt(env->msg, idx);
+				strcat(env->msg, "/");
+				strcat(env->msg, env->lan_msg[idx]);
+				send_text_msg(ctx, env->msg);
+			}
+			else if (check_con_challenger(env, idx, buftmp))
+			{
+				cvtInt(env->msg, idx);
+				strcat(env->msg, "/");
+				strcat(env->msg, env->lan_msg[idx]);
+				send_text_msg(ctx, env->msg);
+			}
+			else if (check_ws_ready(env, idx, buftmp))
+			{
+				fprintf(stdout, "[%s] [%d], env->msg = [%s]\n", __FILE__, __LINE__, env->msg);//_DEBUG_//
+				strcpy(env->msg, env->lan_msg[idx]);
+				send_text_msg(ctx, env->msg);
+			}
+			else if (check_ws_allready(env, idx, buftmp))
+			{
+				cvtInt(env->msg, idx);
+				strcat(env->msg, "/");
+				strcat(env->msg, env->lan_msg[idx]);
+				send_text_msg(ctx, env->msg);
+				fprintf(stdout, "[%s] [%d], env->msg = [%s]\n", __FILE__, __LINE__, env->msg);
+			}
+			free(buftmp);
 		}
 	}
 }

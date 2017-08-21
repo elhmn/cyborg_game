@@ -28,6 +28,8 @@ CC = gcc
 
 TAGS = -Wall -Werror -Wextra
 
+SIZE = 4
+
 all: $(NAME)
 
 $(NAME) : $(OBJS)
@@ -35,7 +37,7 @@ $(NAME) : $(OBJS)
 
 $(OBJS) : $(SRCS)
 	make -C ./libft
-	$(CC) $(TAGS) -g -c $(INCS) $(WSLAY_INC_DIR) $(SRCS) && mv $(OBJ) $(OBJDIR)
+	$(CC) $(TAGS) -DMAXPLAYER=$(SIZE) -g -c $(INCS) $(WSLAY_INC_DIR) $(SRCS) && mv $(OBJ) $(OBJDIR)
 
 clean:
 	make clean -C ./libft

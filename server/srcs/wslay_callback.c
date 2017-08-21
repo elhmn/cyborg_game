@@ -114,11 +114,12 @@ void			on_msg_recv_callback(wslay_event_context_ptr ctx,
 		if (tmp)
 		{
 			ft_strncpy(tmp, (const char*)arg->msg, arg->msg_length);
-			if (strncmp(tmp, "hello", arg->msg_length))
+			if (strncmp(tmp, ECHO, arg->msg_length))
 			{
 				// send message to parent
 				send_rcv_msg(session->env, session->idx, tmp);
 				kill(getppid(), SIGRT_RCV);
+				fprintf(stdout, "parent message received\n");
 			}
 			free(tmp);
 		}

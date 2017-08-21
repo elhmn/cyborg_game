@@ -34,6 +34,6 @@ unsigned char		*pipe_com_read(int fd)
 		perror("read");
  		exit(EXIT_FAILURE);
 	}
- 	fprintf(stdout, "just read content [%d] buf = [%s]\n", fd, buf);//_DEBUG_//
+//  	fprintf(stdout, "just read content [%d] buf = [%s]\n", fd, buf);//_DEBUG_//
 	return (buf);
 }

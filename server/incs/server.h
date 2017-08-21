@@ -17,6 +17,12 @@
 #include <signal.h>
 
 /*
+** echo message coming from clients
+*/
+
+# define ECHO			"hello"
+
+/*
 ** Realtime signal definition
 */
 
@@ -31,7 +37,10 @@
 // If room no more has challenger
 # define SIGRT_NOCHAL	(SIGRTMIN + 3)
 
-# define MAXPLAYER		4
+# ifndef MAXPLAYER
+	#  define MAXPLAYER		4
+# endif
+
 # define BUFSIZE		1024
 
 typedef struct		s_com
@@ -85,7 +94,7 @@ typedef struct		s_env
 	char			msg[BUFSIZE];
 
 	//this message must be sent to the lan
-	char			lan_msg[BUFSIZE];
+	char			lan_msg[MAXPLAYER][BUFSIZE];
 
 	//received message buffer
 	char			rcv_msg[MAXPLAYER][BUFSIZE];
@@ -160,12 +169,15 @@ void				send_text_msg(wslay_event_context_ptr ctx, char *msg);
 
 void				update_con_list(t_env *env);
 void				send_con_list(t_env *env);
-int					check_con_list(t_env *env, int idx);
+int					check_con_list(t_env *env, int idx, unsigned char *buftmp);
 
 void				send_con_challenger(t_env *env, int state);
-int					check_con_challenger(t_env *env, int idx);
+int					check_con_challenger(t_env *env, int idx, unsigned char *buftmp);
 void				send_ws_ready(t_env *env);
-int					check_ws_ready(t_env *env, int idx);
+int					check_ws_ready(t_env *env, int idx, unsigned char *buftmp);
+
+void				send_ws_allready(t_env *env);
+int					check_ws_allready(t_env *env, int idx, unsigned char *buftmp);
 
 /*
 ** pipe.c

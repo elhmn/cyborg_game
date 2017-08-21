@@ -8,7 +8,6 @@ static int			all_ready(t_env e)
 
 	for (i = 0; i < MAXPLAYER; i++)
 	{
-		fprintf(stdout, "ready[%d] = %d\n", i, e.ready[i]);//_DEBUG_//
 		if (e.ready[i] == 0)
 			return (0);
 	}
@@ -20,25 +19,23 @@ static void			fs_waitroom(t_env *env)
 	char **tab;
 
 	tab = NULL;
-	fprintf(stdout, "fs_waitroom [%s], [%d]\n", __FILE__, __LINE__);//_DEBUG_//
+// 	fprintf(stdout, "fs_waitroom [%s], [%d]\n", __FILE__, __LINE__);//_DEBUG_//
 	if (env)
 	{
-	fprintf(stdout, "fs_waitroom [%s], [%d]\n", __FILE__, __LINE__);//_DEBUG_//
 		tab = ft_strsplit((char*)env->rcv_msg[env->rcv_idx], '/');
 		if (tab)
 		{
-	fprintf(stdout, "fs_waitroom [%s], [%d]\n", __FILE__, __LINE__);//_DEBUG_//
-			show_tab(tab);
+// 			show_tab(tab);
 			//check what ever you want
 			if (update_ready_tab(env, tab))
 			{
-	fprintf(stdout, "fs_waitroom [%s], [%d]\n", __FILE__, __LINE__);//_DEBUG_//
+				send_ws_ready(env);
 				if (all_ready(*env))
 				{
-	fprintf(stdout, "fs_waitroom [%s], [%d]\n", __FILE__, __LINE__);//_DEBUG_//
+					usleep(10);
+					send_ws_allready(env);
 					fprintf(stdout, "The game can start !!\n");
 				}
-				send_ws_ready(env);
 			}
 			free_tab(&tab);
 		}
@@ -178,10 +175,10 @@ static void			parent_signal_handler(int sig)
 	{
 		if (check_rcv_msg(&g_env))
 		{
-			fprintf(stdout, "Parent received message [%s]\n", g_env.rcv_msg[g_env.rcv_idx]);
+			fprintf(stdout, "-----Parent received message [%s]\n", g_env.rcv_msg[g_env.rcv_idx]);//_DEBUG_//
 			//Call env->state corresponding function
 			fs_tab[g_env.state](&g_env);
-			fprintf(stdout, "Parent received message [%s]\n", g_env.rcv_msg[g_env.rcv_idx]);
+			fprintf(stdout, "------Parent received message [%s]\n", g_env.rcv_msg[g_env.rcv_idx]);//_DEBUG_//
 		}
 	}
 }
@@ -309,6 +306,9 @@ int					connection_handler(int sock)
 					// Send connection list to children
 					send_con_list(&g_env);
 
+// 					usleep(1000);
+					//Send ready event
+					send_ws_ready(&g_env);
 					//check if has challenger
 					if (has_challenger(g_env))
 						send_con_challenger(&g_env, 1);
