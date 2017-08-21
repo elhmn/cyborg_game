@@ -319,3 +319,148 @@ int				check_ws_start(t_env *env, int idx, unsigned char *buftmp)
 	return (ret);
 }
 
+void			send_ws_guess(t_env *env, char **tab)
+{
+	char	buf[256];
+	int		val;
+
+	if (env && tab)
+	{
+		if (env->com_tab[env->rcv_idx].sock == -1)
+			return ;
+		memset(env->msg, 0, BUFSIZE);
+		strcpy(env->msg, cvtInt(buf, env->rcv_idx));
+		if (tab[3])
+		{
+			val = atoi(tab[3]);
+			if (val >= env->min && val <= env->max)
+			{
+				if (val == env->number)
+				{
+					strcat(env->msg, "/ws/found");
+				}
+				else
+				{
+					strcat(env->msg, "/ws/guess/");
+					if (val < env->number)
+					{
+						strcat(env->msg, "1");
+					}
+					else if (val > env->number)
+					{
+						strcat(env->msg, "0");
+					}
+					strcat(env->msg, "/");//_DEBUG_//
+					// cheat
+					strcat(env->msg, cvtInt(buf, env->number));//_DEBUG_//
+				}
+			}
+			else
+			{
+				strcat(env->msg, "/ws/outofrange");
+			}
+		}
+// 			strcpy(env->msg, (char*)env->rcv_msg[env->rcv_idx]);
+		pipe_com_write(env->ptoc_pipe[env->rcv_idx][1], env->msg);
+		fprintf(stdout, "send ws guess [%d][%s]\n",
+				env->rcv_idx, env->msg);//_DEBUG_//
+
+	}
+}
+
+int				check_ws_guess(t_env *env, int idx, unsigned char *buftmp)
+{
+	char				**tab;
+	int					tmp;
+	int					ret;
+
+	ret = 0;
+	if (!env)
+	{
+		fprintf(stdout, "Error : env set to NULL!\n");
+		return (0);
+	}
+//  	fprintf(stdout, "check spe con buftmp = [%s]\n", buftmp);//_DEBUG_//
+	if (buftmp)
+	{
+		tab = ft_strsplit((char*)buftmp, '/');
+		if (tab)
+		{
+// 			show_tab(tab);
+			tmp = atoi(tab[0]);
+ 			if (tmp >= 0
+			&& tmp <= MAXPLAYER
+			&& !strcmp((const char*)tab[1], "ws")
+			&& (!strcmp((const char*)tab[2], "guess")
+				|| !strcmp((const char*)tab[2], "found")
+				|| !strcmp((const char*)tab[2], "outofrange")))
+			{
+				memset(env->lan_msg[idx], 0, BUFSIZE);
+				strcpy(env->lan_msg[idx], (const char *)buftmp);
+				fprintf(stdout, "check ws guess lan_msg[%d] = [%s]\n", idx, env->lan_msg[idx]);//_DEBUG_//
+				fprintf(stdout, "guess ws sent\n");//_DEBUG_//
+				ret = 1;
+			}
+			free_tab(&tab);
+		}
+	}
+	return (ret);
+}
+
+void			send_ws_winner(t_env *env, char **tab)
+{
+	char	buf[256];
+	int		i;
+
+	if (env && tab)
+	{
+		if (env->com_tab[env->rcv_idx].sock == -1)
+			return ;
+		for (i = 0; i < MAXPLAYER; i++)
+		{
+			if (env->com_tab[i].sock == -1)
+				continue ;
+			memset(env->msg, 0, BUFSIZE);
+			strcpy(env->msg, "ws/winner/");
+			strcat(env->msg, cvtInt(buf, env->rcv_idx));
+			strcat(env->msg, ";");
+			strcat(env->msg, cvtInt(buf, env->number));
+			pipe_com_write(env->ptoc_pipe[i][1], env->msg);
+			fprintf(stdout, "send ws winner [%d][%s]\n",
+				i, env->msg);//_DEBUG_//
+		}
+	}
+}
+
+int				check_ws_winner(t_env *env, int idx, unsigned char *buftmp)
+{
+	char				**tab;
+	int					ret;
+
+	ret = 0;
+	if (!env)
+	{
+		fprintf(stdout, "Error : env set to NULL!\n");
+		return (0);
+	}
+//  	fprintf(stdout, "check spe con buftmp = [%s]\n", buftmp);//_DEBUG_//
+	if (buftmp)
+	{
+		tab = ft_strsplit((char*)buftmp, '/');
+		if (tab)
+		{
+// 			show_tab(tab);
+			if (!strcmp((const char*)tab[0], "ws")
+			&& !strcmp((const char*)tab[1], "winner"))
+			{
+				memset(env->lan_msg[idx], 0, BUFSIZE);
+				strcpy(env->lan_msg[idx], (const char *)buftmp);
+				fprintf(stdout, "check ws winner lan_msg[%d] = [%s]\n", idx, env->lan_msg[idx]);//_DEBUG_//
+				fprintf(stdout, "winner ws sent\n");//_DEBUG_//
+				ret = 1;
+			}
+			free_tab(&tab);
+		}
+	}
+	return (ret);
+}

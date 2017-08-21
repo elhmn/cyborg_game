@@ -1,10 +1,21 @@
 var		wsclient = function ()
 {
+	var		newGameBtnAddEventListener = function ()
+	{
+		document.getElementById('div-btn-restart').addEventListener('click', function ()
+		{
+			// var res = document.getElementById('btn-restart');
+			console.log("click Test !");
+			window.location.reload();
+		});
+	};
 
 	var		sendBtnAddEventListener = function ()
 	{
 		var todo = function ()
 		{
+			if (gameState == e_gameState.gameEnd)
+				return ;
 			choice = document.getElementById('choice').value;
 			var res = document.getElementById('btn-send-msg');
 			if (!choice || isNaN(choice))
@@ -26,7 +37,7 @@ var		wsclient = function ()
 			console.log(player_id + "/ws/guess/" + choice); //Debug
 		};
 
-		document.getElementById('btn-send').addEventListener('click', function ()
+		document.getElementById('div-btn-send').addEventListener('click', function ()
 		{
 			todo();
 		});
@@ -112,7 +123,7 @@ var		wsclient = function ()
 				document.getElementById("btn-play").innerHTML = "starting...";
 				player_ready = true;
 				updateMsg(player_id + "/ws/ready");
-				document.getElementById("btn-play").removeEventListener('click', fun_play);
+				document.getElementById("div-btn-play").removeEventListener('click', fun_play);
 			};
 
 			var		fun_wait =  function ()
@@ -126,8 +137,8 @@ var		wsclient = function ()
 				if (player_ready == false)
 				{
 					document.getElementById("btn-play").innerHTML = "play";
-					document.getElementById("btn-play").removeEventListener('click', fun_wait);
-					document.getElementById("btn-play").addEventListener('click', fun_play);
+					document.getElementById("div-btn-play").removeEventListener('click', fun_wait);
+					document.getElementById("div-btn-play").addEventListener('click', fun_play);
 				}
 			}
 			else
@@ -135,8 +146,8 @@ var		wsclient = function ()
 				if (player_ready == false)
 				{
 					document.getElementById("btn-play").innerHTML = "waiting for connection...";
-					document.getElementById("btn-play").removeEventListener('click', fun_play);
-					document.getElementById("btn-play").addEventListener('click', fun_wait);
+					document.getElementById("div-btn-play").removeEventListener('click', fun_play);
+					document.getElementById("div-btn-play").addEventListener('click', fun_wait);
 				}
 			}
 		}
@@ -228,6 +239,62 @@ var		wsclient = function ()
 		}
 	}
 
+	var		getResult = function (data)
+	{
+		if (data[1] == "ws"
+			&& (data[2] == "found"
+				|| data[2] == "outofrange"
+				|| data[2] == "guess"
+				))
+		{
+			var res = document.getElementById('btn-send-msg');
+			if (data[2] == "outofrange")
+			{
+				res.innerHTML = "number out of range [" + limMin + ", "+ limMax +"]";
+				return ;
+			}
+			else if (data[2] == "guess")
+			{
+				var tmp = document.getElementById('game-text-result');
+				if (tmp.style.display == "none")
+				{
+					tmp.style.display = "initial";
+				}
+				if (data[3] == "1")
+					document.getElementById('number-state').innerHTML = "greater";
+				else if (data[3] == "0")
+					document.getElementById('number-state').innerHTML = "smaller";
+			}
+			else if (data[2] == "found")
+			{
+				updateMsg(player_id + "/ws/winner");
+				console.log(player_id + "/ws/winner");
+			}
+			document.getElementById('btn-send').innerHTML = "send";
+		}
+	}
+
+	var		getWinner = function (data)
+	{
+		if (data[1] == "ws" && data[2] == "winner")
+		{
+			var list = data[data.length - 1].split(";");
+			if (list && list.length == 2)
+			{
+				var tmp = document.getElementById('game-text-result');
+				if (tmp.style.display == "none")
+				{
+					tmp.style.display = "initial";
+				}
+				tmp.innerHTML = 'Player ' + (parseInt(list[0]) + 1) + ' wins ! Cyborg number was <span class="color-yel">'+ list[1] + '</span>!'
+				gameState = e_gameState.gameEnd;
+				document.getElementById('div-btn-restart').style.display = "flex";
+				updateMsg(player_id + "/ws/end");
+				console.log(player_id + "/ws/end");
+			}
+		}
+	}
+
 	var		fs_gameStart = function (event)
 	{
 		if (typeof event.data === "string")
@@ -237,10 +304,22 @@ var		wsclient = function ()
 			if (data && data.length > 0)
 			{
 				getLimits(data);
-				// getConList(data);
-				// getChallenger(data);
-				// getReady(data);
-				// getAllReady(data);
+				getResult(data);
+				getWinner(data);
+			}
+		}
+	};
+
+	var		fs_gameEnd = function (event)
+	{
+		if (typeof event.data === "string")
+		{
+			var data = event.data.split("/");
+			console.log(data);
+			if (data && data.length > 0)
+			{
+				// getLimits(data);
+				// getResult(data);
 			}
 		}
 	};
@@ -309,11 +388,7 @@ var		wsclient = function ()
 		return ({
 					waitRoom : [n++, fs_waitRoom],
 					gameStart : [n++, fs_gameStart],
-					gameChoose : [n++, ],
-					gameCompare : [n++, ],
-					gameResult : [n++, ],
-					gameEditRole : [n++, ],
-					gameEnd : [n++, ]
+					gameEnd : [n++, fs_gameEnd]
 		});
 	})();
 
@@ -339,7 +414,8 @@ var		wsclient = function ()
 	console.log(ws);
 	if (ws)
 	{
-		sendBtnAddEventListener();		
+		sendBtnAddEventListener();
+		newGameBtnAddEventListener();
 		ws.onopen = ws_onopen;
 		ws.onclose = ws_onclose;
 		ws.onerror = ws_onerror;

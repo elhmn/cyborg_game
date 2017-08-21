@@ -169,6 +169,8 @@ void				send_con_close(t_env *env, int idx);
 void				send_rcv_msg(t_env *env, int idx, char *msg);
 int					update_ready_tab(t_env *env, char **tab);
 int					update_ws_start(t_env *env, char **tab);
+int					update_ws_guess(t_env *env, char **tab);
+int					update_ws_winner(t_env *env, char **tab);
 
 /*
 ** child_to_client.c
@@ -185,15 +187,21 @@ void				send_con_list(t_env *env);
 int					check_con_list(t_env *env, int idx, unsigned char *buftmp);
 
 void				send_con_challenger(t_env *env, int state);
-int					check_con_challenger(t_env *env, int idx, unsigned char *buftmp);
+int					check_con_challenger(t_env *env, int idx,
+					unsigned char *buftmp);
 void				send_ws_ready(t_env *env);
 int					check_ws_ready(t_env *env, int idx, unsigned char *buftmp);
 
 void				send_ws_allready(t_env *env);
-int					check_ws_allready(t_env *env, int idx, unsigned char *buftmp);
+int					check_ws_allready(t_env *env,
+					int idx, unsigned char *buftmp);
 void				send_ws_start(t_env *env);
 int					check_ws_start(t_env *env, int idx, unsigned char *buftmp);
+int					check_ws_guess(t_env *env, int idx, unsigned char *buftmp);
+void				send_ws_guess(t_env *env, char **tab);
 
+int					check_ws_winner(t_env *env, int idx, unsigned char *buftmp);
+void				send_ws_winner(t_env *env, char **tab);
 /*
 ** pipe.c
 */

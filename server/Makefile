@@ -32,12 +32,15 @@ SIZE = 4
 
 all: $(NAME)
 
+static: $(OBJS)
+	$(CC) $(TAGS) $(WSLAY_LIB_DIR) $(LIBFT) -static -o $(NAME) $(OBJS) $(LIBS)
+
 $(NAME) : $(OBJS)
-	$(CC) $(TAGS) $(WSLAY_LIB_DIR) $(LIBFT) -g -o $(NAME) $(OBJS) $(LIBS)
+	$(CC) $(TAGS) $(WSLAY_LIB_DIR) $(LIBFT) -o $(NAME) $(OBJS) $(LIBS)
 
 $(OBJS) : $(SRCS)
 	make -C ./libft
-	$(CC) $(TAGS) -DMAXPLAYER=$(SIZE) -g -c $(INCS) $(WSLAY_INC_DIR) $(SRCS) && mv $(OBJ) $(OBJDIR)
+	$(CC) $(TAGS) -DMAXPLAYER=$(SIZE) -c $(INCS) $(WSLAY_INC_DIR) $(SRCS) && mv $(OBJ) $(OBJDIR)
 
 clean:
 	make clean -C ./libft

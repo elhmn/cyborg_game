@@ -57,7 +57,7 @@ static void			fs_start(t_env *env)
 			//check what ever you want
 			if (update_ws_start(env, tab))
 			{
-				if (env->number >= 0)
+				if (env->number < 0)
 				{
 					//choose cyborg number
 					srand(time(NULL));
@@ -65,6 +65,14 @@ static void			fs_start(t_env *env)
 				}
 				//send min and max limits
 				send_ws_start(env);
+			}
+			if (update_ws_guess(env, tab))
+			{
+				send_ws_guess(env, tab);
+			}
+			if (update_ws_winner(env, tab))
+			{
+				send_ws_winner(env, tab);
 			}
 			free_tab(&tab);
 		}

@@ -65,6 +65,21 @@ static void			fs_start(wslay_event_context_ptr ctx,
 				send_text_msg(ctx, env->msg);
 				fprintf(stdout, "[%s] [%d], env->msg = [%s]\n", __FILE__, __LINE__, env->msg);
 			}
+			else if (check_ws_guess(env, idx, buftmp))
+			{
+				strcpy(env->msg, env->lan_msg[idx]);
+				send_text_msg(ctx, env->msg);
+				fprintf(stdout, "[%s] [%d], env->msg = [%s]\n", __FILE__, __LINE__, env->msg);
+			}
+			else if (check_ws_winner(env, idx, buftmp))
+			{
+				cvtInt(env->msg, idx);
+				strcat(env->msg, "/");
+				strcat(env->msg, env->lan_msg[idx]);
+				send_text_msg(ctx, env->msg);
+				env->state = START;
+				fprintf(stdout, "[%s] [%d], env->msg = [%s]\n", __FILE__, __LINE__, env->msg);
+			}
 			free(buftmp);
 		}
 	}

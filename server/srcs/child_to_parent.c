@@ -40,6 +40,7 @@ int				check_deconnection(t_env *env)
 					env->com_tab[i].sock = -1;
 					env->com_tab[i].pid = -1;
 					env->ready[i] = 0;
+					env->number = -1;
 // 					fprintf(stdout, "Message get [%d]\n", i);
 					ret = 1;
 				}
@@ -167,7 +168,7 @@ int			update_ws_start(t_env *env, char **tab)
 	int		idx;
 
 	ret = 0;
-	fprintf(stdout, "check_ws_start \n");
+	fprintf(stdout, "update_ws_start \n");
 	if (env && tab)
 	{
 		idx = atoi(tab[0]);
@@ -175,6 +176,50 @@ int			update_ws_start(t_env *env, char **tab)
 			&& idx <= MAXPLAYER
 			&& !strcmp((const char*)tab[1], "ws")
 			&& !strcmp((const char*)tab[2], "start"))
+		{
+			fprintf(stdout, "Message get [%d]\n", idx);
+			ret = 1;
+		}
+	}
+	return (ret);
+}
+
+int			update_ws_guess(t_env *env, char **tab)
+{
+	int		ret;
+	int		idx;
+
+	ret = 0;
+	fprintf(stdout, "update_ws_guess \n");
+	if (env && tab)
+	{
+		idx = atoi(tab[0]);
+		if (idx >= 0
+			&& idx <= MAXPLAYER
+			&& !strcmp((const char*)tab[1], "ws")
+			&& !strcmp((const char*)tab[2], "guess"))
+		{
+			fprintf(stdout, "Message get [%d]\n", idx);
+			ret = 1;
+		}
+	}
+	return (ret);
+}
+
+int			update_ws_winner(t_env *env, char **tab)
+{
+	int		ret;
+	int		idx;
+
+	ret = 0;
+	fprintf(stdout, "update_ws_winner \n");//_DEBUG_//
+	if (env && tab)
+	{
+		idx = atoi(tab[0]);
+		if (idx >= 0
+			&& idx <= MAXPLAYER
+			&& !strcmp((const char*)tab[1], "ws")
+			&& !strcmp((const char*)tab[2], "winner"))
 		{
 			fprintf(stdout, "Message get [%d]\n", idx);
 			ret = 1;
