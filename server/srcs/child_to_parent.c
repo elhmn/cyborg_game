@@ -39,6 +39,7 @@ int				check_deconnection(t_env *env)
 				{
 					env->com_tab[i].sock = -1;
 					env->com_tab[i].pid = -1;
+					env->ready[i] = 0;
 // 					fprintf(stdout, "Message get [%d]\n", i);
 					ret = 1;
 				}
@@ -127,6 +128,33 @@ int				check_rcv_msg(t_env *env)
 				free_tab(&tab);
 			}
 			free(buftmp);
+		}
+	}
+	return (ret);
+}
+
+/*
+** client rcv data parsing and interaction
+*/
+
+int			update_ready_tab(t_env *env, char **tab)
+{
+	int		ret;
+	int		idx;
+
+	ret = 0;
+	if (env && tab)
+	{
+		idx = atoi(tab[0]);
+		if (idx >= 0
+			&& idx <= MAXPLAYER
+			&& !strcmp((const char*)tab[1], "ws")
+			&& !strcmp((const char*)tab[2], "ready"))
+		{
+// 			env->rcv_idx = i;
+			env->ready[idx] = 1;
+			fprintf(stdout, "Message get [%d]\n", idx);
+			ret = 1;
 		}
 	}
 	return (ret);

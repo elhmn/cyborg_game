@@ -39,6 +39,7 @@ void				init_env(t_env *env)
 	env->ctop_update = 0;
 	env->ptoc_update = 0;
 	env->state = WAITROOM;
+	env->isfull = 0;
 	init_comtab(env->com_tab, MAXPLAYER);
 	init_tab(env->pts, MAXPLAYER, 0);
 	init_tab(env->ready, MAXPLAYER, 0);

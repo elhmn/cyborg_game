@@ -9,7 +9,6 @@ static void			fs_waitroom(wslay_event_context_ptr ctx,
 	{
 		if (check_con_list(env, idx))
 		{
-// 			fprintf(stdout, "SENT======\n");//_DEBUG_//
 			cvtInt(env->msg, idx);
 			strcat(env->msg, "/");
 			strcat(env->msg, env->lan_msg);
@@ -22,10 +21,18 @@ static void			fs_waitroom(wslay_event_context_ptr ctx,
 			strcat(env->msg, env->lan_msg);
 			send_text_msg(ctx, env->msg);
 		}
+		if (check_ws_ready(env, idx))
+		{
+			fprintf(stdout, "je suis con\n");
+// 			cvtInt(env->msg, idx);
+// 			strcat(env->msg, "/");
+			strcat(env->msg, env->lan_msg);
+			send_text_msg(ctx, env->msg);
+		}
 	}
 }
 
-static void			init_fs_tab(fstate *fs_tab)
+static void			init_fs_tab(fstate_c *fs_tab)
 {
 	if (fs_tab)
 	{
@@ -37,22 +44,26 @@ int					communication_handler(t_env *env, int idx, int sock)
 {
 	wslay_event_context_ptr 		ctx;
 	struct wslay_event_callbacks 	callbacks = {
-													recv_callback,
-													send_callback,
-													NULL,
-													NULL,
-													NULL,
-													NULL,
-													on_msg_recv_callback
-												};
+									recv_callback,
+									send_callback,
+									NULL,
+									NULL,
+									NULL,
+									NULL,
+									on_msg_recv_callback
+									};
+
 	struct Session 					session = {sock, env, idx};
 	struct pollfd					event;
 	socklen_t						len;
 	struct sockaddr_in				addr;
-	fstate							fs_tab[END];
+	fstate_c						fs_tab[END];
+	int								out;
 
 	init_fs_tab(fs_tab);
 	len = sizeof(struct sockaddr_in);
+	(void)out;
+	out = 0;
 	if (getpeername(sock, (struct sockaddr*)&addr, &len) < 0)
 	{
 		perror("getpeername");
@@ -77,9 +88,13 @@ int					communication_handler(t_env *env, int idx, int sock)
 
 	while(wslay_event_want_read(ctx) || wslay_event_want_write(ctx))
 	{
-		//Call env->state corresponding function
-		fs_tab[env->state](ctx, env, idx);
-
+		if (env->isfull)
+			send_text_msg(ctx, "-1/ws/full");
+		else
+		{
+			//Call env->state corresponding function
+			fs_tab[env->state](ctx, env, idx);
+		}
 		if(poll(&event, 1, -1) == -1)
 		{
 			perror("poll");

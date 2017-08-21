@@ -2,6 +2,57 @@
 #include "server.h"
 #include "websocket.h"
 
+static int			all_ready(t_env e)
+{
+	int		i;
+
+	for (i = 0; i < MAXPLAYER; i++)
+	{
+		fprintf(stdout, "ready[%d] = %d\n", i, e.ready[i]);//_DEBUG_//
+		if (e.ready[i] == 0)
+			return (0);
+	}
+	return (1);
+}
+
+static void			fs_waitroom(t_env *env)
+{
+	char **tab;
+
+	tab = NULL;
+	fprintf(stdout, "fs_waitroom [%s], [%d]\n", __FILE__, __LINE__);//_DEBUG_//
+	if (env)
+	{
+	fprintf(stdout, "fs_waitroom [%s], [%d]\n", __FILE__, __LINE__);//_DEBUG_//
+		tab = ft_strsplit((char*)env->rcv_msg[env->rcv_idx], '/');
+		if (tab)
+		{
+	fprintf(stdout, "fs_waitroom [%s], [%d]\n", __FILE__, __LINE__);//_DEBUG_//
+			show_tab(tab);
+			//check what ever you want
+			if (update_ready_tab(env, tab))
+			{
+	fprintf(stdout, "fs_waitroom [%s], [%d]\n", __FILE__, __LINE__);//_DEBUG_//
+				if (all_ready(*env))
+				{
+	fprintf(stdout, "fs_waitroom [%s], [%d]\n", __FILE__, __LINE__);//_DEBUG_//
+					fprintf(stdout, "The game can start !!\n");
+				}
+				send_ws_ready(env);
+			}
+			free_tab(&tab);
+		}
+	}
+}
+
+static void			init_fs_tab(fstate_p *fs_tab)
+{
+	if (fs_tab)
+	{
+		fs_tab[WAITROOM] = fs_waitroom;
+	}
+}
+
 static void			get_ip(char *buf, int sock)
 {
 	socklen_t						len;
@@ -75,15 +126,20 @@ static int			has_challenger(t_env e)
 	return (0);
 }
 
-static int			isfull(t_env e)
+
+static int			isfull(t_env *e)
 {
 	int		i;
 
 	for (i = 0; i < MAXPLAYER; i++)
 	{
-		if (e.com_tab[i].sock == -1)
+		if (e->com_tab[i].sock == -1)
+		{
+			e->isfull = 0;
 			return (0);
+		}
 	}
+	e->isfull = 1;
 	return (1);
 }
 
@@ -96,9 +152,12 @@ t_env				g_env;
 
 static void			parent_signal_handler(int sig)
 {
+	fstate_p		fs_tab[END];
+
+	init_fs_tab(fs_tab);
 	if (sig == SIGRT_CLOSE)
 	{
-// // 		fprintf(stdout, "je suis con");//_DEBUG_//
+// 		fprintf(stdout, "je suis con");//_DEBUG_//
 		//father pipe com event handler
 		if (check_deconnection(&g_env))
 		{
@@ -120,15 +179,12 @@ static void			parent_signal_handler(int sig)
 		if (check_rcv_msg(&g_env))
 		{
 			fprintf(stdout, "Parent received message [%s]\n", g_env.rcv_msg[g_env.rcv_idx]);
+			//Call env->state corresponding function
+			fs_tab[g_env.state](&g_env);
+			fprintf(stdout, "Parent received message [%s]\n", g_env.rcv_msg[g_env.rcv_idx]);
 		}
 	}
 }
-// 
-// static void			child_signal_handler(int sig)
-// {
-// 	(void)sig;
-// }
-
 
 int					connection_handler(int sock)
 {
@@ -152,15 +208,41 @@ int					connection_handler(int sock)
 	}
 	while (!quit_server())
 	{
-		if (!isfull(g_env))
+		put_comtab(g_env.com_tab, MAXPLAYER);//_DEBUG_//
+		memset(&addr, 0, len);
+		if ((sock_com = accept(sock, (struct sockaddr*)&addr, &len)) < 0)
 		{
-			put_comtab(g_env.com_tab, MAXPLAYER);//_DEBUG_//
-			memset(&addr, 0, len);
-			if ((sock_com = accept(sock, (struct sockaddr*)&addr, &len)) < 0)
+			perror("accept");
+			return (-1);
+		}
+		//if no more place in the room
+		if (isfull(&g_env))
+		{
+			switch (fork())
 			{
-				perror("accept");
-				return (-1);
+				//child
+				case 0:
+				close(sock);
+
+				fprintf(stdout, "sock_com = [%d]\n", sock_com);
+				//handle communication beetween socket and web clients
+				communication_handler(&g_env, idx, sock_com);
+				exit(EXIT_SUCCESS);
+
+				case -1:
+					perror("fork");
+					return (-1);
+
+				//father
+				default:
+					close(sock_com);
+					//Signal handler /* that's dirty */
+					signal(SIGCHLD, SIG_IGN);
+					break ;
 			}
+		}
+		else
+		{
 			idx = choose_sock_idx(g_env, idx);
 			g_env.com_tab[idx].sock = sock_com;
 			
@@ -206,20 +288,20 @@ int					connection_handler(int sock)
 					close(g_env.ctop_pipe[idx][1]);
 					close(g_env.ptoc_pipe[idx][0]);
 					close(g_env.ptoc_pipe[idx][1]);
- 					exit(EXIT_SUCCESS);
+					exit(EXIT_SUCCESS);
 
 				case -1:
 					perror("fork");
 					return (-1);
 
 				//father
- 				default:
+				default:
 
 					//keep ip
 					get_ip(g_env.com_tab[idx].ip, sock_com);
 
- 					//father pipe com event handler
- 					check_deconnection(&g_env);
+					//father pipe com event handler
+					check_deconnection(&g_env);
 
 					// Update connection list
 					update_con_list(&g_env);
@@ -234,7 +316,7 @@ int					connection_handler(int sock)
 						send_con_challenger(&g_env, 0);
 
 
- 					close(sock_com);
+					close(sock_com);
 
 					//father close ptoc input
 					close(g_env.ptoc_pipe[idx][0]);
@@ -243,21 +325,18 @@ int					connection_handler(int sock)
 					close(g_env.ctop_pipe[idx][1]);
 
 					//Signal handler /* that's dirty */
-	 				signal(SIGCHLD, SIG_IGN);
-	 				signal(SIGRT_CLOSE, parent_signal_handler);
-	 				signal(SIGRT_RCV, parent_signal_handler);
- 					break ;
+					signal(SIGCHLD, SIG_IGN);
+					signal(SIGRT_CLOSE, parent_signal_handler);
+					signal(SIGRT_RCV, parent_signal_handler);
+					break ;
 			}
 		}
-		else
+		if (!full)
 		{
-			if (!full)
-			{
-				full = 1;
-				usleep(3000);
-				fprintf(stdout, "Host can't handle more than %d clients!\n",
-						MAXPLAYER);
-			}
+			full = 1;
+			usleep(3000);
+			fprintf(stdout, "Host can't handle more than %d clients!\n",
+					MAXPLAYER);
 		}
 
 		//father pipe com event handler

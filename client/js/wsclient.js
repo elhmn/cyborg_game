@@ -110,7 +110,24 @@ var		wsclient = function ()
 	var		ws_onmessage = function (event)
 	{
 		console.log(event.data);
-		console.log("je test ! on message");
+		if (typeof event.data === "string")
+		{
+			console.log(event.data);
+			var data = event.data.split("/");
+			console.log(data);
+			if (data && data.length > 0)
+			{
+				player_id = parseInt(data[0]);
+				console.log(id = player_id);
+				if (data[1] == "ws" && data[2] == "full")
+				{
+					document.getElementsByTagName("body")[0].innerHTML += "The game room is full, retry later !";
+					document.getElementsByTagName("body")[0].innerHTML += '<br/><br/><span style="color:red">RELOAD THE PAGE</span>';
+					ws.close();
+					return ;
+				}
+			}
+		}
 		var fs_tab = {
 			waitRoom : fs_waitRoom
 		};
@@ -128,8 +145,10 @@ var		wsclient = function ()
 	};
 
 	var uri = "ws://";
-	var host_addr = window.prompt("Enter your IP adress");
-	var host_port = window.prompt("Enter port number");
+	var host_addr = '127.0.0.1'
+	var host_port = '8080';
+	// var host_addr = window.prompt("Enter your IP adress");
+	// var host_port = window.prompt("Enter port number");
 	var stdSendingMsg = "hello";
 	var	sendingMsg = stdSendingMsg;
 	var updateMsg = function (msg)
@@ -179,7 +198,7 @@ var		wsclient = function ()
 		ws.onclose = ws_onclose;
 		ws.onerror = ws_onerror;
 		ws.onmessage = ws_onmessage;
-		setInterval(ws_request, 50);
+		setInterval(ws_request, 500);
 	}
 };
 

@@ -57,6 +57,9 @@ typedef struct		s_env
 	t_com			com_tab[MAXPLAYER];
 
 
+	//room full
+	int				isfull;
+
 	//player ready 
 	int				ready[MAXPLAYER];
 
@@ -101,8 +104,10 @@ typedef struct		s_env
 ** fstate used in communication_handler.c
 */
 
-typedef void				(*fstate)(wslay_event_context_ptr ctx,
+typedef void				(*fstate_c)(wslay_event_context_ptr ctx,
 										t_env *env, int idx);
+
+typedef void				(*fstate_p)(t_env *env);
 
 
 /*
@@ -141,6 +146,7 @@ int					check_deconnection(t_env *env);
 int					check_rcv_msg(t_env *env);
 void				send_con_close(t_env *env, int idx);
 void				send_rcv_msg(t_env *env, int idx, char *msg);
+int					update_ready_tab(t_env *env, char **tab);
 
 /*
 ** child_to_client.c
@@ -158,6 +164,8 @@ int					check_con_list(t_env *env, int idx);
 
 void				send_con_challenger(t_env *env, int state);
 int					check_con_challenger(t_env *env, int idx);
+void				send_ws_ready(t_env *env);
+int					check_ws_ready(t_env *env, int idx);
 
 /*
 ** pipe.c

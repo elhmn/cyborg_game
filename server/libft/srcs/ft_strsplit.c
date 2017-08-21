@@ -79,9 +79,6 @@ char			**ft_strsplit(char const *s, char c)
 		nbr = ft_get_words_nbr(1, tmp + 1, c);
 	else
 		nbr = ft_get_words_nbr(0, tmp, c);
-	ft_putstr("hey : ");
-	ft_putnbr(nbr);
-	ft_putendl("");
 	if (nbr)
 	{
 		tab = (char**)malloc(sizeof(char*) * (nbr + 1));
