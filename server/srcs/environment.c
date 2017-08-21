@@ -40,10 +40,13 @@ void				init_env(t_env *env)
 	env->ptoc_update = 0;
 	env->state = WAITROOM;
 	env->isfull = 0;
+	env->number = -1;
+	env->chidx = -1;
+	env->min = MIN;
+	env->max = MAX;
 	init_comtab(env->com_tab, MAXPLAYER);
-	init_tab(env->pts, MAXPLAYER, 0);
 	init_tab(env->ready, MAXPLAYER, 0);
-	init_tab(env->choice, MAXPLAYER, -1);
+	init_tab(env->chpid, MAXPLAYER, -1);
 }
 
 //Check whether the was a child to parent communication or not

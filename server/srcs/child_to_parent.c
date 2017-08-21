@@ -160,3 +160,25 @@ int			update_ready_tab(t_env *env, char **tab)
 	}
 	return (ret);
 }
+
+int			update_ws_start(t_env *env, char **tab)
+{
+	int		ret;
+	int		idx;
+
+	ret = 0;
+	fprintf(stdout, "check_ws_start \n");
+	if (env && tab)
+	{
+		idx = atoi(tab[0]);
+		if (idx >= 0
+			&& idx <= MAXPLAYER
+			&& !strcmp((const char*)tab[1], "ws")
+			&& !strcmp((const char*)tab[2], "start"))
+		{
+			fprintf(stdout, "Message get [%d]\n", idx);
+			ret = 1;
+		}
+	}
+	return (ret);
+}

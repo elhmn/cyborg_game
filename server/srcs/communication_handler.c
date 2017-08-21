@@ -40,6 +40,29 @@ static void			fs_waitroom(wslay_event_context_ptr ctx,
 				strcat(env->msg, "/");
 				strcat(env->msg, env->lan_msg[idx]);
 				send_text_msg(ctx, env->msg);
+				env->state = START;
+				fprintf(stdout, "[%s] [%d], env->msg = [%s]\n", __FILE__, __LINE__, env->msg);
+			}
+
+			free(buftmp);
+		}
+	}
+}
+
+static void			fs_start(wslay_event_context_ptr ctx,
+					t_env *env, int idx)
+{
+	unsigned char *buftmp;
+
+	if (env)
+	{
+		buftmp = pipe_com_read(env->ptoc_pipe[idx][0]);
+		if (buftmp)
+		{
+			if (check_ws_start(env, idx, buftmp))
+			{
+				strcpy(env->msg, env->lan_msg[idx]);
+				send_text_msg(ctx, env->msg);
 				fprintf(stdout, "[%s] [%d], env->msg = [%s]\n", __FILE__, __LINE__, env->msg);
 			}
 			free(buftmp);
@@ -47,11 +70,13 @@ static void			fs_waitroom(wslay_event_context_ptr ctx,
 	}
 }
 
+
 static void			init_fs_tab(fstate_c *fs_tab)
 {
 	if (fs_tab)
 	{
 		fs_tab[WAITROOM] = fs_waitroom;
+		fs_tab[START] = fs_start;
 	}
 }
 

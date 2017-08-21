@@ -19,7 +19,7 @@ static void			fs_waitroom(t_env *env)
 	char **tab;
 
 	tab = NULL;
-// 	fprintf(stdout, "fs_waitroom [%s], [%d]\n", __FILE__, __LINE__);//_DEBUG_//
+	fprintf(stdout, "fs_waitroom [%s], [%d]\n", __FILE__, __LINE__);//_DEBUG_//
 	if (env)
 	{
 		tab = ft_strsplit((char*)env->rcv_msg[env->rcv_idx], '/');
@@ -32,10 +32,39 @@ static void			fs_waitroom(t_env *env)
 				send_ws_ready(env);
 				if (all_ready(*env))
 				{
-					usleep(10);
 					send_ws_allready(env);
 					fprintf(stdout, "The game can start !!\n");
+					env->state = START;
 				}
+			}
+			free_tab(&tab);
+		}
+	}
+}
+
+static void			fs_start(t_env *env)
+{
+	char **tab;
+
+	tab = NULL;
+	fprintf(stdout, "fs_start [%s], [%d]\n", __FILE__, __LINE__);//_DEBUG_//
+	if (env)
+	{
+		tab = ft_strsplit((char*)env->rcv_msg[env->rcv_idx], '/');
+		if (tab)
+		{
+// 			show_tab(tab);
+			//check what ever you want
+			if (update_ws_start(env, tab))
+			{
+				if (env->number >= 0)
+				{
+					//choose cyborg number
+					srand(time(NULL));
+					env->number = env->min + rand() % (env->max + 1 - env->min);
+				}
+				//send min and max limits
+				send_ws_start(env);
 			}
 			free_tab(&tab);
 		}
@@ -47,6 +76,7 @@ static void			init_fs_tab(fstate_p *fs_tab)
 	if (fs_tab)
 	{
 		fs_tab[WAITROOM] = fs_waitroom;
+		fs_tab[START] = fs_start;
 	}
 }
 
@@ -145,6 +175,22 @@ static int			isfull(t_env *e)
 ** to handle basic IPC communication instead of sigaction
 */
 
+static void			send_close_sig_to_children(t_env *env)
+{
+	int i;
+
+	i = 0;
+	for (i = 0; i < MAXPLAYER; i++)
+	{
+		fprintf(stdout, "[%d], ", env->chpid[i]);
+		if (env->chpid[i] != -1)
+		{
+			kill(env->chpid[i], SIGRT_CLOSE);
+		}
+	}
+	fprintf(stdout, "\n");
+}
+
 t_env				g_env;
 
 static void			parent_signal_handler(int sig)
@@ -159,11 +205,20 @@ static void			parent_signal_handler(int sig)
 		if (check_deconnection(&g_env))
 		{
 // 			fprintf(stdout, "je me suis deconnecte !\n");
-			// Update connection list
-			update_con_list(&g_env);
+			//handle in game deconnection
+			if (g_env.state == START)
+			{
+				g_env.state = WAITROOM;
+				send_close_sig_to_children(&g_env);
+			}
+			else if (g_env.state == WAITROOM)
+			{
+				// Update connection list
+				update_con_list(&g_env);
 
-			// Send connection list to children
-			send_con_list(&g_env);
+				// Send connection list to children
+				send_con_list(&g_env);
+			}
 		}
 		//check if has challenger
 		if (has_challenger(g_env))
@@ -175,11 +230,31 @@ static void			parent_signal_handler(int sig)
 	{
 		if (check_rcv_msg(&g_env))
 		{
-			fprintf(stdout, "-----Parent received message [%s]\n", g_env.rcv_msg[g_env.rcv_idx]);//_DEBUG_//
+			fprintf(stdout, "-----Parent received message [%s] START\n", g_env.rcv_msg[g_env.rcv_idx]);//_DEBUG_//
 			//Call env->state corresponding function
 			fs_tab[g_env.state](&g_env);
-			fprintf(stdout, "------Parent received message [%s]\n", g_env.rcv_msg[g_env.rcv_idx]);//_DEBUG_//
+			fprintf(stdout, "------Parent received message [%s] END\n", g_env.rcv_msg[g_env.rcv_idx]);//_DEBUG_//
 		}
+	}
+}
+
+static void			child_signal_handler(int sig)
+{
+	if (sig == SIGRT_CLOSE)
+	{
+		fprintf(stdout, "child force close [%d]!\n", g_env.chidx);//_DEBUG_//
+
+		//send close message
+		send_con_close(&g_env, g_env.chidx);
+
+		close(g_env.ctop_pipe[g_env.chidx][0]);
+		close(g_env.ctop_pipe[g_env.chidx][1]);
+		close(g_env.ptoc_pipe[g_env.chidx][0]);
+		close(g_env.ptoc_pipe[g_env.chidx][1]);
+
+		kill(getppid(), SIGRT_CLOSE);
+
+		exit(EXIT_SUCCESS);
 	}
 }
 
@@ -188,6 +263,7 @@ int					connection_handler(int sock)
 	int					sock_com;
 	int					full;
 	int					idx;
+	int					chpid;
 
 	socklen_t			len;
 	struct sockaddr_in	addr;
@@ -260,10 +336,14 @@ int					connection_handler(int sock)
 			}
 			make_non_block(g_env.ptoc_pipe[idx][0]);
 			make_non_block(g_env.ptoc_pipe[idx][1]);
-			switch (fork())
+			switch ((chpid = fork()))
 			{
 				//child
 				case 0:
+
+					//store
+					g_env.chidx = idx;
+
 					close(sock);
 
 					//child close ptoc input
@@ -273,18 +353,21 @@ int					connection_handler(int sock)
 					close(g_env.ctop_pipe[idx][0]);
 
 					fprintf(stdout, "sock_com = [%d]\n", sock_com);
+					signal(SIGRT_CLOSE, child_signal_handler);
 
 					//handle communication beetween socket and web clients
 					communication_handler(&g_env, idx, sock_com);
 
 					//send close message
 					send_con_close(&g_env, idx);
-					kill(getppid(), SIGRT_CLOSE);
 
 					close(g_env.ctop_pipe[idx][0]);
 					close(g_env.ctop_pipe[idx][1]);
 					close(g_env.ptoc_pipe[idx][0]);
 					close(g_env.ptoc_pipe[idx][1]);
+
+					kill(getppid(), SIGRT_CLOSE);
+
 					exit(EXIT_SUCCESS);
 
 				case -1:
@@ -294,7 +377,10 @@ int					connection_handler(int sock)
 				//father
 				default:
 
-					//keep ip
+					//store pid
+					g_env.chpid[idx] = chpid;
+
+					//store ip
 					get_ip(g_env.com_tab[idx].ip, sock_com);
 
 					//father pipe com event handler

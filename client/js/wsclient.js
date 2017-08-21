@@ -1,5 +1,45 @@
 var		wsclient = function ()
 {
+
+	var		sendBtnAddEventListener = function ()
+	{
+		var todo = function ()
+		{
+			choice = document.getElementById('choice').value;
+			var res = document.getElementById('btn-send-msg');
+			if (!choice || isNaN(choice))
+			{
+				res.innerHTML = "You must enter a Number";
+				document.getElementById('btn-send').innerHTML = "send";
+				return ;
+			}
+			console.log(choice);
+			if (parseInt(choice) < parseInt(limMin) || parseInt(choice) > parseInt(limMax))
+			{
+				res.innerHTML = "number out of range [" + limMin + ", "+ limMax +"]";
+				document.getElementById('btn-send').innerHTML = "send";
+				return ;
+			}
+			document.getElementById('btn-send').innerHTML = "sending...";
+			res.innerHTML = "";
+			updateMsg(player_id + "/ws/guess/" + choice);
+			console.log(player_id + "/ws/guess/" + choice); //Debug
+		};
+
+		document.getElementById('btn-send').addEventListener('click', function ()
+		{
+			todo();
+		});
+
+		document.getElementById('choice').addEventListener('keypress', function (e)
+		{
+			if (e.keyCode == 13)
+			{
+				todo();
+			}
+		});
+	};
+
 	var		ws_onopen = function (event)
 	{
 		document.getElementById("after-connect").style.display = "initial";
@@ -17,17 +57,17 @@ var		wsclient = function ()
 		if (wasClean)
 		{
 			console.log("Connection closed normally !");
-			document.getElementsByTagName("body")[0].innerHTML += "Connection closed normally ! : " + 
+			document.getElementById("error").innerHTML += "Connection closed normally ! : " + 
 			+ reason + "(Code : " + code + ") !";
-			document.getElementsByTagName("body")[0].innerHTML += '<br/><br/><span style="color:red">RELOAD THE PAGE</span>';
+			document.getElementById("error").innerHTML += '<br/><br/><span style="color:red">RELOAD THE PAGE</span>';
 		}
 		else
 		{
 			console.log("Connection closed with message : " + 
 			+ reason + "(Code : " + code + ") !");
-			document.getElementsByTagName("body")[0].innerHTML += "Connection closed with message : " + 
+			document.getElementById("error").innerHTML += "Connection closed with message : " + 
 			+ reason + "(Code : " + code + ") !";
-			document.getElementsByTagName("body")[0].innerHTML += '<br/><br/><span style="color:red">RELOAD THE PAGE</span>';
+			document.getElementById("error").innerHTML += '<br/><br/><span style="color:red">RELOAD THE PAGE</span>';
 		}
 	};
 
@@ -129,11 +169,29 @@ var		wsclient = function ()
 
 	var		getAllReady = function (data)
 	{
+		console.log("ALL READY");
 		if (data[1] == "ws" && data[2] == "allready")
 		{
 			var room = document.getElementById('room');
+			var game = document.getElementById('game');
+			game.style.display = "flex";
 			var e = room.querySelectorAll("li span:last-child");
-			console.log("ALL READY");
+			var play = document.querySelector("#div-btn-play");
+			var playRes = document.querySelector("#btn-play-msg");
+			var playerList = document.querySelectorAll("#room>li span:first-child");
+			play.style.display = "none";
+			playRes.style.display = "none";
+			console.log(playerList);
+			for (var i = 0; i < e.length; i++)
+			{
+				e[i].style.display = "none";
+			}
+			for (var i = 0; i < playerList.length; i++)
+			{
+				playerList[i].style.margin = "auto";
+			}
+			gameState = e_gameState.gameStart;
+			updateMsg(player_id + "/ws/start");
 		}
 	}
 
@@ -155,11 +213,42 @@ var		wsclient = function ()
 		}
 	};
 
+	var		getLimits = function (data)
+	{
+		if (data[1] == "ws" && data[2] == "limits")
+		{
+			var list = data[data.length - 1].split(";");
+			if (list && list.length == 2)
+			{
+				document.getElementById("number-min").innerHTML = limMin = list[0];
+				document.getElementById("number-max").innerHTML = limMax = list[1];
+			}
+			// var room = document.getElementById('room');
+			// var e = room.querySelectorAll("li span:last-child");
+		}
+	}
+
+	var		fs_gameStart = function (event)
+	{
+		if (typeof event.data === "string")
+		{
+			var data = event.data.split("/");
+			console.log(data);
+			if (data && data.length > 0)
+			{
+				getLimits(data);
+				// getConList(data);
+				// getChallenger(data);
+				// getReady(data);
+				// getAllReady(data);
+			}
+		}
+	};
+
 	var		canConnect = function (event)
 	{
 		if (typeof event.data === "string")
 		{
-			console.log(event.data);
 			var data = event.data.split("/");
 			console.log(data);
 			if (data && data.length > 0)
@@ -212,12 +301,14 @@ var		wsclient = function ()
 
 	var player_id = -1;
 	var player_ready = false;
+	var limMin = 0;
+	var limMax = 0;
+	var choice = -1;
 	var	e_gameState = (function () {
 		var n = 0;
 		return ({
 					waitRoom : [n++, fs_waitRoom],
-					gamecanStart : [n++, ],
-					gameStart : [n++, ],
+					gameStart : [n++, fs_gameStart],
 					gameChoose : [n++, ],
 					gameCompare : [n++, ],
 					gameResult : [n++, ],
@@ -248,6 +339,7 @@ var		wsclient = function ()
 	console.log(ws);
 	if (ws)
 	{
+		sendBtnAddEventListener();		
 		ws.onopen = ws_onopen;
 		ws.onclose = ws_onclose;
 		ws.onerror = ws_onerror;
@@ -263,6 +355,7 @@ var		conBtnAddEventListener = function ()
 		wsclient();
 	});
 };
+
 
 var websocket_test = function ()
 {

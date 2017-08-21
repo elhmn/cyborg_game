@@ -260,3 +260,62 @@ int				check_ws_allready(t_env *env, int idx, unsigned char *buftmp)
 	return (ret);
 }
 
+void			send_ws_start(t_env *env)
+{
+	char	buf[256];
+
+	if (env)
+	{
+		if (env->com_tab[env->rcv_idx].sock == -1)
+			return ;
+		memset(env->msg, 0, BUFSIZE);
+		strcpy(env->msg, cvtInt(buf, env->rcv_idx));
+		strcat(env->msg, "/ws/limits/");
+		strcat(env->msg,  cvtInt(buf, env->min));
+		strcat(env->msg, ";");
+		strcat(env->msg,  cvtInt(buf, env->max));
+// 			strcpy(env->msg, (char*)env->rcv_msg[env->rcv_idx]);
+		pipe_com_write(env->ptoc_pipe[env->rcv_idx][1], env->msg);
+		fprintf(stdout, "send ws start [%d][%s]\n",
+				env->rcv_idx, env->msg);//_DEBUG_//
+
+	}
+}
+
+int				check_ws_start(t_env *env, int idx, unsigned char *buftmp)
+{
+	char				**tab;
+	int					tmp;
+	int					ret;
+
+	ret = 0;
+	if (!env)
+	{
+		fprintf(stdout, "Error : env set to NULL!\n");
+		return (0);
+	}
+//  	fprintf(stdout, "check spe con buftmp = [%s]\n", buftmp);//_DEBUG_//
+	if (buftmp)
+	{
+		tab = ft_strsplit((char*)buftmp, '/');
+		if (tab)
+		{
+// 			show_tab(tab);
+			tmp = atoi(tab[0]);
+ 			if (tmp >= 0
+			&& tmp <= MAXPLAYER
+			&& !strcmp((const char*)tab[1], "ws")
+			&& !strcmp((const char*)tab[2], "limits"))
+			{
+				memset(env->lan_msg[idx], 0, BUFSIZE);
+				strcpy(env->lan_msg[idx], (const char *)buftmp);
+				fprintf(stdout, "check ws start lan_msg[%d] = [%s]\n", idx, env->lan_msg[idx]);//_DEBUG_//
+				fprintf(stdout, "start ws sent\n");//_DEBUG_//
+				ret = 1;
+			}
+			free_tab(&tab);
+		}
+	}
+	return (ret);
+}
+

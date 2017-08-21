@@ -15,6 +15,13 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <signal.h>
+#include <time.h>
+
+//cyborg limit min
+# define MIN			0
+
+//cyborg limit max
+# define MAX			1000
 
 /*
 ** echo message coming from clients
@@ -65,21 +72,26 @@ typedef struct		s_env
 {
 	t_com			com_tab[MAXPLAYER];
 
+	//parent children pids
+	int				chpid[MAXPLAYER];
+
+	//child index
+	int				chidx;
 
 	//room full
 	int				isfull;
 
-	//player ready 
+	//player ready
 	int				ready[MAXPLAYER];
 
-	//player points
-	int				pts[MAXPLAYER];
+	//cyborg choice
+	int				number;
 
-	//player choice
-	int				choice[MAXPLAYER];
+	//cyborg limit min
+	int				min;
 
-	//game master index
-	int				master_idx;
+	//cyborg limit max
+	int				max;
 
 	//game state	e_state
 	int				state;
@@ -156,6 +168,7 @@ int					check_rcv_msg(t_env *env);
 void				send_con_close(t_env *env, int idx);
 void				send_rcv_msg(t_env *env, int idx, char *msg);
 int					update_ready_tab(t_env *env, char **tab);
+int					update_ws_start(t_env *env, char **tab);
 
 /*
 ** child_to_client.c
@@ -178,6 +191,8 @@ int					check_ws_ready(t_env *env, int idx, unsigned char *buftmp);
 
 void				send_ws_allready(t_env *env);
 int					check_ws_allready(t_env *env, int idx, unsigned char *buftmp);
+void				send_ws_start(t_env *env);
+int					check_ws_start(t_env *env, int idx, unsigned char *buftmp);
 
 /*
 ** pipe.c

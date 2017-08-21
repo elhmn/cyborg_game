@@ -15,6 +15,7 @@
 				</p>
 			</div>
 			<div class="placement-vr margin-auto col-100">
+				<p id="error" class="title-m-2 margin-auto info-2"></p>
 				<p class="title-m-2 margin-auto">
 					Player <span id="head-id"></span> <span class="color-yel" style="display:none">(master)</span>
 				</p>
@@ -23,15 +24,26 @@
 		<div id="con-btn" class="button-m-3 placement-vr">
 			<p class="margin-auto">connect</p>
 		</div>
+		<section  id="game" class="placement-vr" style="display:none">
+			<div id="game-text" class="title-m-1">
+				Cyborg choosed a number between <span id="number-min" class="color-yel">123</span> and <span id="number-max" class="color-yel">688</span>, Guess the number !
+			</div>
+			<div id="game-text-result" style="display:none">
+				<span id="number-guess" class="color-yel">23</span> cyborg number is <span id="number-state" class="color-yel">greater</span> !
+			</div>
+			<div>
+				<input type="text" name="choice" id="choice" class="input-field-m-1 col-70 color-white"/>
+			</div>
+			<div id="div-btn-send" class="button-m-3 placement-vr">
+				<p id="btn-send" class="margin-auto">send</p>
+			</div>
+			<p id="btn-send-msg" class="margin-auto" style="color:red; margin-top:10px"></p>
+		</section>
 		<section  id="after-connect" class="placement-vr" style="display:none">
 			<ul id="room" class="placement-vr">
-				<!--<li class="placement-hr"><span style="margin:auto">P1 - 192.168.0.2 - 0 pts</span><span class="color-yel" style="display:none">(master)</span></li>
-				<li class="placement-hr"><span style="margin:auto">P1 - 192.168.0.2 - 0 pts</span><span class="color-yel" style="display:none">(master)</span></li>
-				<li class="placement-hr"><span style="margin:auto">P1 - 192.168.0.2 - 0 pts</span><span class="color-yel" style="display:none">(master)</span></li>
-				<li class="placement-hr"><span style="margin:auto">P1 - 192.168.0.2 - 0 pts</span><span class="color-yel" style="display:none">(master)</span></li>
-				<li class="placement-hr"><span style="margin:auto">P1 - 192.168.0.2 - 0 pts</span><span class="color-yel" style="display:none">(master)</span></li>-->
+				<!--<li class="placement-hr"><span style="margin:auto">P1 - 192.168.0.2 - 0 pts</span><span class="color-yel" style="display:none">(master)</span></li>-->
 			</ul>
-			<div class="button-m-3 placement-vr">
+			<div id="div-btn-play" class="button-m-3 placement-vr">
 				<p id="btn-play" class="margin-auto">waiting for connection...</p>
 			</div>
 			<p id="btn-play-msg" class="margin-auto" style="color:red; margin-top:10px"></p>
