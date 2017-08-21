@@ -1,14 +1,16 @@
-var		wsclient = function ()
+var		wsclient = function (host_addr, host_port)
 {
 	var		newGameBtnAddEventListener = function ()
 	{
 		document.getElementById('div-btn-restart').addEventListener('click', function ()
 		{
+				
 			// var res = document.getElementById('btn-restart');
 			console.log("click Test !");
 			window.location.reload();
 		});
 	};
+
 
 	var		sendBtnAddEventListener = function ()
 	{
@@ -187,11 +189,13 @@ var		wsclient = function ()
 			var game = document.getElementById('game');
 			game.style.display = "flex";
 			var e = room.querySelectorAll("li span:last-child");
+			var setCon = document.querySelector("#set-connect");
 			var play = document.querySelector("#div-btn-play");
 			var playRes = document.querySelector("#btn-play-msg");
 			var playerList = document.querySelectorAll("#room>li span:first-child");
 			play.style.display = "none";
 			playRes.style.display = "none";
+			setCon.style.display = "none";
 			console.log(playerList);
 			for (var i = 0; i < e.length; i++)
 			{
@@ -367,10 +371,7 @@ var		wsclient = function ()
 	};
 
 	var uri = "ws://";
-	var host_addr = '127.0.0.1'
-	var host_port = '8080';
-	// var host_addr = window.prompt("Enter your IP adress");
-	// var host_port = window.prompt("Enter port number");
+	
 	var stdSendingMsg = "hello";
 	var	sendingMsg = stdSendingMsg;
 	var updateMsg = function (msg)
@@ -396,6 +397,8 @@ var		wsclient = function ()
 	console.log(e_gameState);
 	console.log(gameState);
 
+	sendBtnAddEventListener();
+	newGameBtnAddEventListener();
 	if (isNaN(host_port))
 	{
 		console.log("Error : wrong port number");
@@ -414,8 +417,6 @@ var		wsclient = function ()
 	console.log(ws);
 	if (ws)
 	{
-		sendBtnAddEventListener();
-		newGameBtnAddEventListener();
 		ws.onopen = ws_onopen;
 		ws.onclose = ws_onclose;
 		ws.onerror = ws_onerror;
@@ -424,13 +425,35 @@ var		wsclient = function ()
 	}
 };
 
-var		conBtnAddEventListener = function ()
+var		setBtnAddEventListener = function ()
 {
-	document.getElementById('con-btn').addEventListener('click', function ()
+	console.log("Set ip / port");
+	document.getElementById('div-btn-set').addEventListener('click', function ()
 	{
-		wsclient();
+		console.log("Set ip / port");
+		host_addr = window.prompt("Enter your IP adress");
+		host_port = window.prompt("Enter port number");
+		if (isNaN(host_port))
+		{
+			console.log("Error : wrong port number");
+			return ;
+		}
+		document.getElementById('btn-set-msg').innerHTML += "ip : " + host_addr + "; port : " + host_port;
+		console.log("Set ip / port");
 	});
 };
+
+var		conBtnAddEventListener = function ()
+{
+	var host_addr = '127.0.0.1'
+	var host_port = '8080';
+	setBtnAddEventListener();	
+	document.getElementById('con-btn').addEventListener('click', function ()
+	{
+		wsclient(host_addr, host_port);
+	});
+};
+
 
 
 var websocket_test = function ()
