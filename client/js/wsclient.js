@@ -441,7 +441,7 @@ var		setBtnAddEventListener = function ()
 			console.log("Error : wrong port number");
 			return ;
 		}
-		document.getElementById('btn-set-msg').innerHTML += "ip : " + host_addr + "; port : " + host_port;
+		document.getElementById('btn-set-msg').innerHTML = "ip : " + host_addr + "; port : " + host_port;
 		console.log("Set ip / port");
 	});
 };
