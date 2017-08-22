@@ -36,7 +36,7 @@ Workaround:
 
 		--> This has something to do with dynamic libraries just run :
 
-			make linker
+			./link.sh
 
 		and
 			make

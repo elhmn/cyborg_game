@@ -34,10 +34,6 @@ SIZE = 4
 
 all: $(NAME)
 
-linker:
-	LD_LIBRARY_PATH=/home/mc/boris_game/server/.libs/wslay/lib/.libs
-	export LD_LIBRARY_PATH
-
 static: $(OBJS)
 	$(CC) $(TAGS) $(WSLAY_LIB_DIR) $(NETTLE_LIB_DIR) $(LIBFT) -static -o $(NAME) $(OBJS) $(LIBS)
 
