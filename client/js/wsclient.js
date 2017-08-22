@@ -1,4 +1,7 @@
-var		wsclient = function (host_addr, host_port)
+var host_addr = '127.0.0.1'
+var host_port = '8080';
+
+var		wsclient = function ()
 {
 	var		newGameBtnAddEventListener = function ()
 	{
@@ -445,12 +448,10 @@ var		setBtnAddEventListener = function ()
 
 var		conBtnAddEventListener = function ()
 {
-	var host_addr = '127.0.0.1'
-	var host_port = '8080';
 	setBtnAddEventListener();	
 	document.getElementById('con-btn').addEventListener('click', function ()
 	{
-		wsclient(host_addr, host_port);
+		wsclient();
 	});
 };
 

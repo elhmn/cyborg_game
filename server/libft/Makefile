@@ -29,7 +29,7 @@ SRC =	ft_isprint.c	ft_isalnum.c	ft_isdigit.c	ft_isalpha.c  \
 		ft_memccpy.c	ft_memmove.c	ft_memset.c		ft_bzero.c	  \
 		ft_itoa.c		ft_strsplit.c	ft_lstnew.c		ft_lstdel.c	  \
 		ft_lstdelone.c	ft_lstiter.c	ft_lstadd.c		ft_lstmap.c   \
-		ft_lstadd_end.c	get_next_line.c ft_realloc.c \
+		ft_lstadd_end.c	ft_realloc.c \
 		ft_putdbl.c
 
 OBJ = $(SRC:.c=.o)

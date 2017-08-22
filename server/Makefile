@@ -18,6 +18,8 @@ INCS = -I ./incs
 
 LIBFT = -L ./libft/
 
+NETTLE_LIB_DIR = -L /lib
+
 WSLAY_LIB_DIR = -L .libs/wslay/lib/.libs/
 
 WSLAY_INC_DIR = -I .libs/wslay/lib/includes/
@@ -30,13 +32,17 @@ TAGS = -Wall -Werror -Wextra
 
 SIZE = 4
 
+linker:
+	LD_LIBRARY_PATH=/home/mc/boris_game/server/.libs/wslay/lib/.libs
+	export LD_LIBRARY_PATH
+
 all: $(NAME)
 
 static: $(OBJS)
-	$(CC) $(TAGS) $(WSLAY_LIB_DIR) $(LIBFT) -static -o $(NAME) $(OBJS) $(LIBS)
+	$(CC) $(TAGS) $(WSLAY_LIB_DIR) $(NETTLE_LIB_DIR) $(LIBFT) -static -o $(NAME) $(OBJS) $(LIBS)
 
 $(NAME) : $(OBJS)
-	$(CC) $(TAGS) $(WSLAY_LIB_DIR) $(LIBFT) -o $(NAME) $(OBJS) $(LIBS)
+	$(CC) $(TAGS) $(WSLAY_LIB_DIR) $(NETTLE_LIB_DIR) $(LIBFT) -o $(NAME) $(OBJS) $(LIBS)
 
 $(OBJS) : $(SRCS)
 	make -C ./libft
