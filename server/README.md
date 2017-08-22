@@ -26,17 +26,18 @@ Compile :
 			make SIZE=<max_player_count> target
 		or
 			make static
-			
+
 Workaround:
 		-->While compiling you might receive this error :
 
-			 error while loading shared libraries: 
-			libwslay.so.0 or nettle.so.0 : cannot open shared object file: No such 
+			 error while loading shared libraries:
+			libwslay.so.0 or nettle.so.0 : cannot open shared object file: No such
 			file or directory
 
 		--> This has something to do with dynamic libraries just run :
 
-			./link.sh
+			LD_LIBRARY_PATH=<aboslute_path>/.libs/wslay/lib/.libs
+			export LD_LIBRARY_PATH
 
 		and
 			make
